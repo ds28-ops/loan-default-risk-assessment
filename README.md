@@ -27,15 +27,44 @@ Traditionally, underwriters rely on basic rule-based heuristics (like income cut
 
 ---
 
-### System Diagram
+┌────────────────────┐
+│     User Input     │  ←─ Loan application form (Gradio or React)
+└────────┬───────────┘
+         │
+         ▼
+┌────────────────────┐
+│   Frontend (UI)    │
+│  - React/Gradio    │
+└────────┬───────────┘
+         │ calls API
+         ▼
+┌────────────────────────┐
+│   FastAPI Backend API  │
+│ - Validates input      │
+│ - Loads ML model       │
+│ - Returns prediction   │
+└────────┬───────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│  Trained ML Model (XGBoost)│
+│ - Classifies as Low/Med/High│
+│ - Loaded from saved model  │
+└────────┬───────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ Prediction + Explanation   │
+│ - Score breakdown          │
+│                            │
+└────────┬───────────────────┘
+         │
+         ▼
+┌────────────────────────────┐
+│ Output to UI (Approval Risk│
+│ Score + Visualization)     │
+└────────────────────────────┘
 
-- **Frontend** (Gradio/React) → collects user loan applicant info
-- **FastAPI Backend** → hosts the prediction API
-- **Model Serving** (scikit-learn / XGBoost model containerized via Docker)
-- **Data pipeline** → CSV + preprocessing logic (ETL), stored on persistent volume
-- **Training VM** on Chameleon (uses CPU or GPU as needed)
-- **Monitoring + feedback logger** for capturing model performance over time
-- **MLFlow** hosted for experiment tracking
 
 ---
 
