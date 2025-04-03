@@ -30,43 +30,30 @@ Traditionally, underwriters rely on basic rule-based heuristics (like income cut
 ###  System Diagram
 
 ```text
-┌────────────────────┐
-│     User Input     │  ←─ Loan application form (Gradio or React)
-└────────┬───────────┘
-         │
-         ▼
-┌────────────────────┐
-│   Frontend (UI)    │
-│  - React/Gradio    │
-└────────┬───────────┘
-         │ calls API
-         ▼
-┌────────────────────────┐
-│   FastAPI Backend API  │
-│ - Validates input      │
-│ - Loads ML model       │
-│ - Returns prediction   │
-└────────┬───────────────┘
-         │
-         ▼
-┌─────────────────────────────┐
-│  Trained ML Model (XGBoost) │
-│ - Classifies as Low/Med/High│
-│ - Loaded from saved model   │
-└────────┬────────────────────┘
-         │
-         ▼
-┌────────────────────────────┐
-│ Prediction + Explanation   │
-│ - Score breakdown          │
-│ - SHAP values (optional)   │
-└────────┬───────────────────┘
-         │
-         ▼
-┌────────────────────────────┐
-│ Output to UI (Approval Risk│
-│ Score + Visualization)     │
-└────────────────────────────┘
+                    TRAINING LOOP                                       INFERENCE LOOP
+┌────────────────────────────────────┐                 ┌──────────────────────────────────────────────┐
+│   Feature Engineering /            │                 │                    React UI                   │
+│   Processing (Pandas, etc.)        │                 └────────────────────────┬─────────────────────┘
+└────────────────────┬──────────────┘                                              │
+                     ▼                                                             ▼
+┌────────────────────────────────────┐                 ┌──────────────────────────────────────────────┐
+│   Manual Hyperparameter Tuning     │                 │       User Input via Form (Loan Details)     │
+└────────────────────┬──────────────┘                 │ - Validates Input                             │
+                     ▼                                │ - Loads Model from Registry                   │
+┌────────────────────────────────────┐                 └────────────────────────┬─────────────────────┘
+│       Train ML Model (XGBoost)      │                                              ▼
+└────────────────────┬──────────────┘                 ┌──────────────────────────────────────────────┐
+                     ▼                                │        Predictor (XGBoost Model)              │
+┌────────────────────────────────────┐                 └────────────────────────┬─────────────────────┘
+│     Are Results Acceptable?         │                                              ▼
+└──────────────┬──────────────┬──────┘                 ┌──────────────────────────────────────────────┐
+               │              │                        │      Prediction + Explanation (Optional)     │
+         No ▼              Yes ▼                       └────────────────────────┬─────────────────────┘
+     ┌─────────────┐   ┌──────────────────────────┐                                   ▼
+     │ Re-Tune HParams │   │      Model Registry (MLflow)    │         ┌──────────────────────────────────────────────┐
+     └─────────────┘   └──────────────────────────┘         │   Output to UI (Risk Score + Visualization)    │
+                                                           └──────────────────────────────────────────────┘
+
 ```
 
 
