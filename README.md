@@ -61,7 +61,7 @@ Traditionally, underwriters rely on basic rule-based heuristics (like income cut
 
 |               | How it was created                                                                 | Conditions of use |
 |---------------|--------------------------------------------------------------------------------------|-------------------|
-| LendingClub dataset | Collected and shared by LendingClub, real-world loan performance data (~1M+ rows) | Publicly available for academic research via Kaggle |
+| LendingClub dataset | Collected and shared by LendingClub, real-world loan performance data (~3M+ rows) | Publicly available for academic research via Kaggle |
 | scikit-learn   | Open-source ML library for classical tabular models                               | BSD-3 license     |
 | XGBoost        | Boosted tree model implementation                                                  | Apache 2.0        |
 
