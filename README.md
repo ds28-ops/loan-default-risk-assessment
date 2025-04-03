@@ -49,11 +49,11 @@ Traditionally, underwriters rely on basic rule-based heuristics (like income cut
 └────────┬───────────────┘
          │
          ▼
-┌────────────────────────────┐
-│  Trained ML Model (XGBoost)│
+┌─────────────────────────────┐
+│  Trained ML Model (XGBoost) │
 │ - Classifies as Low/Med/High│
-│ - Loaded from saved model  │
-└────────┬───────────────────┘
+│ - Loaded from saved model   │
+└────────┬────────────────────┘
          │
          ▼
 ┌────────────────────────────┐
