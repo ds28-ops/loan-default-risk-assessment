@@ -153,10 +153,9 @@ Traditionally, underwriters rely on basic rule-based heuristics (like income cut
    - Model container built with Docker; deployed via Helm
 
 2. **CI/CD Pipeline:**  
-   - GitHub Actions to:  
+   - Ray Cluster to:  
      - Run training jobs  
-     - Package updated model  
-     - Deploy to staging → promote to prod
+    
 
 3. **Environments:**  
    - Staging → Canary → Production  
