@@ -27,6 +27,9 @@ Traditionally, underwriters rely on basic rule-based heuristics (like income cut
 
 ---
 
+###  System Diagram
+
+```text
 ┌────────────────────┐
 │     User Input     │  ←─ Loan application form (Gradio or React)
 └────────┬───────────┘
@@ -56,7 +59,7 @@ Traditionally, underwriters rely on basic rule-based heuristics (like income cut
 ┌────────────────────────────┐
 │ Prediction + Explanation   │
 │ - Score breakdown          │
-│                            │
+│ - SHAP values (optional)   │
 └────────┬───────────────────┘
          │
          ▼
@@ -64,9 +67,8 @@ Traditionally, underwriters rely on basic rule-based heuristics (like income cut
 │ Output to UI (Approval Risk│
 │ Score + Visualization)     │
 └────────────────────────────┘
+```
 
-
----
 
 ### Summary of Outside Materials
 
