@@ -1,95 +1,136 @@
-# smart-claim-triage
-Repository for ECE-GY 9183 course project on Smart Claim Triage System for Health Insurance Providers
+## Title of Project:
+ Predicting Microfinance Loan Default Risk
 
+**Value Proposition:**  
+Microfinance institutions and small banks frequently serve loan applicants with limited or no credit history. Manually assessing these applications is slow, subjective, and often inconsistent. We propose a machine learning system to **automatically assess the default risk of loan applicants**, providing an “approval likelihood” score (High, Medium, Low).  
 
-## Title of project
+The ML system will reduce the time to screen applicants, improve approval consistency, and proactively manage portfolio risk.  
 
-<!-- 
-Discuss: Value proposition: Your will propose a machine learning system that can be 
-used in an existing business or service. (You should not propose a system in which 
-a new business or service would be developed around the machine learning system.) 
-Describe the value proposition for the machine learning system. What’s the (non-ML) 
-status quo used in the business or service? What business metric are you going to be 
-judged on? (Note that the “service” does not have to be for general users; you can 
-propose a system for a science problem, for example.)
--->
+**Current Status Quo:**  
+Traditionally, underwriters rely on basic rule-based heuristics (like income cutoffs, past payment delays), which do not capture the complexity of multi-factor risk indicators.  
+
+**Business Metrics:**  
+- **Classification accuracy / F1-score** on test set  
+- **Recall of high-risk (Low likelihood) applicants**  
+- **Turnaround time for evaluation**
+
+---
 
 ### Contributors
 
-<!-- Table of contributors and their roles. 
-First row: define responsibilities that are shared by the team. 
-Then, each row after that is: name of contributor, their role, and in the third column, 
-you will link to their contributions. If your project involves multiple repos, you will 
-link to their contributions in all repos here. -->
+| Name            | Responsible for                                  | Link to their commits in this repo |
+|-----------------|---------------------------------------------------|------------------------------------|
+| All team members| Design, development, deployment, and evaluation   |                                    |
+| Dhruv Sridhar   | Model training, preprocessing, dataset curation   |                                    |
+| Barath Rama Shankar | Backend + model API integration, data pipeline    |                                    |
+| Sampreeth Avvari | Frontend (form input + result visualization)      |                                    |
 
-| Name                            | Responsible for | Link to their commits in this repo |
-|---------------------------------|-----------------|------------------------------------|
-| All team members                |                 |                                    |
-| Team member 1                   |                 |                                    |
-| Team member 2                   |                 |                                    |
-| Team member 3                   |                 |                                    |
-| Team member 4 (if there is one) |                 |                                    |
+---
 
+### System Diagram
 
+- **Frontend** (Gradio/React) → collects user loan applicant info
+- **FastAPI Backend** → hosts the prediction API
+- **Model Serving** (scikit-learn / XGBoost model containerized via Docker)
+- **Data pipeline** → CSV + preprocessing logic (ETL), stored on persistent volume
+- **Training VM** on Chameleon (uses CPU or GPU as needed)
+- **Monitoring + feedback logger** for capturing model performance over time
+- **MLFlow** hosted for experiment tracking
 
-### System diagram
+---
 
-<!-- Overall digram of system. Doesn't need polish, does need to show all the pieces. 
-Must include: all the hardware, all the containers/software platforms, all the models, 
-all the data. -->
+### Summary of Outside Materials
 
-### Summary of outside materials
+|               | How it was created                                                                 | Conditions of use |
+|---------------|--------------------------------------------------------------------------------------|-------------------|
+| LendingClub dataset | Collected and shared by LendingClub, real-world loan performance data (~1M+ rows) | Publicly available for academic research via Kaggle |
+| scikit-learn   | Open-source ML library for classical tabular models                               | BSD-3 license     |
+| XGBoost        | Boosted tree model implementation                                                  | Apache 2.0        |
 
-<!-- In a table, a row for each dataset, foundation model. 
-Name of data/model, conditions under which it was created (ideally with links/references), 
-conditions under which it may be used. -->
+---
 
-|              | How it was created | Conditions of use |
-|--------------|--------------------|-------------------|
-| Data set 1   |                    |                   |
-| Data set 2   |                    |                   |
-| Base model 1 |                    |                   |
-| etc          |                    |                   |
-
-
-### Summary of infrastructure requirements
-
-<!-- Itemize all your anticipated requirements: What (`m1.medium` VM, `gpu_mi100`), 
-how much/when, justification. Include compute, floating IPs, persistent storage. 
-The table below shows an example, it is not a recommendation. -->
+### Summary of Infrastructure Requirements
 
 | Requirement     | How many/when                                     | Justification |
 |-----------------|---------------------------------------------------|---------------|
-| `m1.medium` VMs | 3 for entire project duration                     | ...           |
-| `gpu_mi100`     | 4 hour block twice a week                         |               |
-| Floating IPs    | 1 for entire project duration, 1 for sporadic use |               |
-| etc             |                                                   |               |
+| `m1.medium` VMs | 3 for entire project duration                     | Data preprocessing, model training, frontend/backend hosting |
+| `gpu_mi100`     | 4-hour block once a week (optional)               | Speeding up model training during hyperparameter tuning |
+| Floating IPs    | 1 for entire project duration                     | For exposing web interface to users |
+| Persistent storage | 100GB                                          | Store original + cleaned datasets, model artifacts, logs |
 
-### Detailed design plan
+---
 
-<!-- In each section, you should describe (1) your strategy, (2) the relevant parts of the 
-diagram, (3) justification for your strategy, (4) relate back to lecture material, 
-(5) include specific numbers. -->
+### Detailed Design Plan
 
-#### Model training and training platforms
+#### Model Training and Training Platforms
+1. **Strategy:**  
+   - Use `XGBoost` as core model (binary/multiclass classification)
+   - Map `loan_status` into 3 categories:
+     - **High chance of approval**: Fully Paid, Current  
+     - **Medium**: Late (31-120), Grace Period, Late (16-30)  
+     - **Low**: Default, Charged Off, Does Not Meet Credit Policy  
+   - Handle class imbalance using weighted loss or SMOTE
 
-<!-- Make sure to clarify how you will satisfy the Unit 4 and Unit 5 requirements, 
-and which optional "difficulty" points you are attempting. -->
+2. **Platform**:  
+   - Training on Chameleon `m1.medium` or `gpu_mi100` with tracked experiments in MLFlow
 
-#### Model serving and monitoring platforms
+3. **Difficulty Points (Unit 4)**:  
+   - [✓] Use distributed hyperparameter tuning with Ray Tune or Optuna  
+   - [✓] Log all training runs using hosted MLFlow (Unit 5)
 
-<!-- Make sure to clarify how you will satisfy the Unit 6 and Unit 7 requirements, 
-and which optional "difficulty" points you are attempting. -->
+---
 
-#### Data pipeline
+#### Model Serving and Monitoring Platforms
+1. **Strategy:**  
+   - Wrap trained model into a FastAPI service
+   - Frontend calls backend via REST API
+   - Optimize model (e.g., convert to ONNX if needed) for inference speed
 
-<!-- Make sure to clarify how you will satisfy the Unit 8 requirements,  and which 
-optional "difficulty" points you are attempting. -->
+2. **Monitoring Plan:**
+   - Log predictions + user feedback (optional)
+   - Use Gradio dashboard or Prometheus + custom logs
 
-#### Continuous X
+3. **Difficulty Points (Unit 6 & 7)**:  
+   - [✓] Quantize model for performance optimization  
+   - [✓] Track online model degradation based on user feedback logs
 
-<!-- Make sure to clarify how you will satisfy the Unit 3 requirements,  and which 
-optional "difficulty" points you are attempting. -->
+---
 
+#### Data Pipeline
 
+1. **Strategy:**  
+   - Initial ingestion of LendingClub CSVs
+   - Build ETL pipeline for:
+     - Cleaning (e.g., mapping `loan_status` to 3 classes)
+     - Feature encoding (categoricals)
+     - Normalization of numerical fields
+   - Store as versioned, cleaned `.parquet` files on mounted volume
 
+2. **Simulated Online Data:**  
+   - Simulate real-time applicant data via a streaming script (Unit 8)
+
+3. **Difficulty Points (Unit 8)**:  
+   - [✓] Persistent storage for all data artifacts  
+   - [✓] Stream ingestion + auto-cleaning pipeline with monitoring hooks
+
+---
+
+#### Continuous X (DevOps)
+
+1. **Infrastructure as Code**  
+   - Provision all Chameleon components with Terraform + Ansible  
+   - Model container built with Docker; deployed via Helm
+
+2. **CI/CD Pipeline:**  
+   - GitHub Actions to:  
+     - Run training jobs  
+     - Package updated model  
+     - Deploy to staging → promote to prod
+
+3. **Environments:**  
+   - Staging → Canary → Production  
+   - Load test and feedback scoring before full deployment
+
+4. **Difficulty Points (Unit 3)**:  
+   - [✓] Full CI/CD pipeline for model retraining and redeployment  
+   - [✓] Canary rollout of new models with performance comparison
