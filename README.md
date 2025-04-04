@@ -2,7 +2,7 @@
  Predicting Microfinance Loan Default Risk
 
 **Value Proposition:**  
-Microfinance institutions and small banks frequently serve loan applicants with limited or no credit history. Manually assessing these applications is slow, subjective, and often inconsistent. We propose a machine learning system to **automatically assess the default risk of loan applicants**, providing an “approval likelihood” score (High, Medium, Low).  
+Microfinance institutions and small banks frequently serve loan applicants with limited or no credit history. Manually assessing these applications is slow, subjective, and often inconsistent. We propose a machine learning system to **automatically assess the default risk of loan applicants**, providing an “approval likelihood” score (High, Medium, Low) along with an explanation of reasons why this applicant is flagged in this category. 
 
 The ML system will reduce the time to screen applicants, improve approval consistency, and proactively manage portfolio risk.  
 
@@ -10,9 +10,29 @@ The ML system will reduce the time to screen applicants, improve approval consis
 Traditionally, underwriters rely on basic rule-based heuristics (like income cutoffs, past payment delays), which do not capture the complexity of multi-factor risk indicators.  
 
 **Business Metrics:**  
-- **Classification accuracy / F1-score** on test set  
-- **Recall of high-risk (Low likelihood) applicants**  
-- **Turnaround time for evaluation**
+- **Classification Accuracy / F1-Score on Test Set**  
+  Ensures overall model reliability by balancing precision and recall.
+
+- **Recall of High-Risk Applicants**  
+  Measures the system’s ability to correctly identify potentially risky applicants.
+
+- **Turnaround Time for Evaluation**  
+  Time taken to process user input and return a risk score prediction (target: < 3 seconds).
+
+- **Default Rate Reduction**  
+  Decrease in issued loans that go into default due to better risk screening.
+
+- **Loan Recovery Rate**  
+  Increase in successful loan repayments driven by better applicant assessment.
+
+- **Approval Efficiency**  
+  Enables faster loan approvals for low-risk users, improving operational throughput.
+
+- **Manual Review Cost Reduction**  
+  Automates initial screening, reducing reliance on human underwriters.
+
+- **Regulatory Compliance Support**  
+  Transparent, explainable model outputs support fairness audits and legal compliance.
 
 ---
 
@@ -30,31 +50,29 @@ Traditionally, underwriters rely on basic rule-based heuristics (like income cut
 ###  System Diagram
 
 ```text
-                    TRAINING LOOP                                       INFERENCE LOOP
-┌────────────────────────────────────┐                 ┌──────────────────────────────────────────────┐
-│   Feature Engineering /            │                 │                    React UI                   │
-│   Processing (Pandas, etc.)        │                 └────────────────────────┬─────────────────────┘
-└────────────────────┬──────────────┘                                              │
-                     ▼                                                             ▼
-┌────────────────────────────────────┐                 ┌──────────────────────────────────────────────┐
-│   Manual Hyperparameter Tuning     │                 │       User Input via Form (Loan Details)     │
-└────────────────────┬──────────────┘                 │ - Validates Input                             │
-                     ▼                                │ - Loads Model from Registry                   │
-┌────────────────────────────────────┐                 └────────────────────────┬─────────────────────┘
-│       Train ML Model (XGBoost)      │                                              ▼
-└────────────────────┬──────────────┘                 ┌──────────────────────────────────────────────┐
-                     ▼                                │        Predictor (XGBoost Model)              │
-┌────────────────────────────────────┐                 └────────────────────────┬─────────────────────┘
-│     Are Results Acceptable?         │                                              ▼
-└──────────────┬──────────────┬──────┘                 ┌──────────────────────────────────────────────┐
-               │              │                        │      Prediction + Explanation (Optional)     │
-         No ▼              Yes ▼                       └────────────────────────┬─────────────────────┘
-     ┌─────────────┐   ┌──────────────────────────┐                                   ▼
-     │ Re-Tune HParams │   │      Model Registry (MLflow)    │         ┌──────────────────────────────────────────────┐
-     └─────────────┘   └──────────────────────────┘         │   Output to UI (Risk Score + Visualization)    │
-                                                           └──────────────────────────────────────────────┘
-
-```
+                            TRAINING LOOP                                        INFERENCE LOOP
+┌──────────────────────────────────────────────┐          ┌──────────────────────────────────────────────┐
+│     Feature Engineering / Processing         │          │                    React UI                   │
+│         (Pandas, Sklearn, etc.)              │          └────────────────────────┬─────────────────────┘
+└──────────────────────────┬───────────────────┘                                   │
+                           ▼                                                       ▼
+┌──────────────────────────────────────────────┐          ┌──────────────────────────────────────────────┐
+│         Manual Hyperparameter Tuning         │          │         User Input via Form (Loan Details)   │
+└──────────────────────────┬───────────────────┘          │ - Validates Input                            │
+                           ▼                              │ - Loads Model from Registry                  │
+┌──────────────────────────────────────────────┐          └────────────────────────┬─────────────────────┘
+│            Train ML Model (XGBoost)           │                                   ▼
+└──────────────────────────┬───────────────────┘          ┌──────────────────────────────────────────────┐
+                           ▼                              │          Predictor (XGBoost Model)           │
+┌──────────────────────────────────────────────┐          └────────────────────────┬─────────────────────┘
+│         Are Results Acceptable?              │                                   ▼
+└──────────────┬──────────────────┬────────────┘          ┌──────────────────────────────────────────────┐
+               │                  │                       │   Prediction + Explanation (Optional)        │
+         No ▼                  Yes ▼                      └────────────────────────┬─────────────────────┘
+   ┌────────────────┐   ┌────────────────────────────┐                                 ▼
+   │ Re-Tune HParams│   │  Model Registry (MLflow)   │          ┌──────────────────────────────────────────────┐
+   └────────────────┘   └────────────────────────────┘          │ Output to UI (Risk Score + Visualization)    │
+                                                                └──────────────────────────────────────────────┘
 
 
 ### Summary of Outside Materials
