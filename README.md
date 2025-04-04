@@ -74,7 +74,7 @@ Traditionally, underwriters rely on basic rule-based heuristics (like income cut
    └────────────────┘   └────────────────────────────┘          │ Output to UI (Risk Score + Visualization)    │
                                                                 └──────────────────────────────────────────────┘
 
-
+```
 ### Summary of Outside Materials
 
 |               | How it was created                                                                 | Conditions of use |
