@@ -42,8 +42,8 @@ Traditionally, underwriters rely on basic rule-based heuristics (like income cut
 |-----------------|---------------------------------------------------|------------------------------------|
 | All team members| Design, development, deployment, and evaluation   |                                    |
 | Dhruv Sridhar   | Model training, preprocessing, dataset curation   |                                    |
-| Barath Rama Shankar | Backend + model API integration, data pipeline    |                                    |
-| Sampreeth Avvari | Frontend (form input + result visualization)      |                                    |
+| Barath Rama Shankar| Backend + model API integration, data pipeline |                                    |
+| Sampreeth Avvari | Frontend (form input + result visualization)     |                                    |
 
 ---
 
@@ -61,15 +61,15 @@ Traditionally, underwriters rely on basic rule-based heuristics (like income cut
 └──────────────────────────┬───────────────────┘          │ - Validates Input                            │
                            ▼                              │ - Loads Model from Registry                  │
 ┌──────────────────────────────────────────────┐          └────────────────────────┬─────────────────────┘
-│            Train ML Model (XGBoost)           │                                   ▼
+│            Train ML Model (XGBoost)           │                                  ▼
 └──────────────────────────┬───────────────────┘          ┌──────────────────────────────────────────────┐
                            ▼                              │          Predictor (XGBoost Model)           │
 ┌──────────────────────────────────────────────┐          └────────────────────────┬─────────────────────┘
 │         Are Results Acceptable?              │                                   ▼
 └──────────────┬──────────────────┬────────────┘          ┌──────────────────────────────────────────────┐
                │                  │                       │   Prediction + Explanation (Optional)        │
-         No ▼                  Yes ▼                      └────────────────────────┬─────────────────────┘
-   ┌────────────────┐   ┌────────────────────────────┐                                 ▼
+         No    ▼               Yes▼                       └────────────────────────┬─────────────────────┘
+   ┌────────────────┐   ┌────────────────────────────┐                             ▼
    │ Re-Tune HParams│   │  Model Registry (MLflow)   │          ┌──────────────────────────────────────────────┐
    └────────────────┘   └────────────────────────────┘          │ Output to UI (Risk Score + Visualization)    │
                                                                 └──────────────────────────────────────────────┘
