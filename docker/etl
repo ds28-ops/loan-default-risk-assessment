@@ -1,0 +1,9 @@
+FROM python:3.9
+
+RUN pip install pandas scikit-learn pyarrow
+
+WORKDIR /app
+
+COPY data_cleaning.py .
+
+CMD ["python", "data_cleaning.py"]
