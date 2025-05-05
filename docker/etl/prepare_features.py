@@ -1,5 +1,5 @@
 # docker/etl/prepare_features.py
-
+print("✅ Script started")
 import pandas as pd
 
 input_path = "/mnt/data/processed/cleaned_data.csv"
