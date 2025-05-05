@@ -9,7 +9,8 @@ RUN pip install pandas scikit-learn pyarrow
 WORKDIR /app
 
 # Copy script from current docker folder into container
-COPY etl/prepare_features.py .
+COPY docker/etl/prepare_features.py .
+
 
 # Default command to run when container starts
 CMD ["python", "prepare_features.py"]
