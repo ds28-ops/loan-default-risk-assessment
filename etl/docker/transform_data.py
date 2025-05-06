@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-RAW_PATH = "/mnt/data/loan_subset.csv"
+RAW_PATH = "/mnt/data/raw/accepted_2007_to_2018Q4.csv"
 OUTPUT_DIR = "/mnt/data/processed"
 OUTPUT_CSV = os.path.join(OUTPUT_DIR, "train_ready.csv")
 LOG_FILE = os.path.join(OUTPUT_DIR, "etl_log.txt")
