@@ -5,7 +5,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install required packages
-RUN pip install --no-cache-dir pandas
+RUN pip install pandas
 
 # Copy the transformation script
 COPY transform_data.py .

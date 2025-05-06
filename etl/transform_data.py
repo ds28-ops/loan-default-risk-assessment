@@ -5,11 +5,10 @@ RAW_PATH = "/mnt/data/raw/accepted_2007_to_2018Q4.csv"
 OUTPUT_DIR = "/mnt/data/processed"
 OUTPUT_CSV = os.path.join(OUTPUT_DIR, "train_ready.csv")
 LOG_FILE = os.path.join(OUTPUT_DIR, "etl_log.txt")
+CHUNK_SIZE = 10000
 
-# Create output dir if not exist
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Features selected based on prior importance and availability
 PREDICTIVE_FEATURES = [
     'delinq_2yrs', 'fico_range_low', 'revol_util', 'pub_rec', 'acc_now_delinq',
     'collections_12_mths_ex_med', 'chargeoff_within_12_mths', 'percent_bc_gt_75',
@@ -41,30 +40,37 @@ def map_risk_level(status):
     else:
         return "High"
 
-# Load
-df = pd.read_csv(RAW_PATH)
-original_columns = set(df.columns)
 log_msgs = []
+df_list = []
 
-# Drop leakage columns
-df.drop(columns=[col for col in LEAKAGE_COLUMNS if col in df.columns], inplace=True)
-log_msgs.append("Dropped leakage columns: " + ", ".join([col for col in LEAKAGE_COLUMNS if col in original_columns]))
+# Read and process chunks
+for i, chunk in enumerate(pd.read_csv(RAW_PATH, chunksize=CHUNK_SIZE, low_memory=False)):
+    original_columns = set(chunk.columns)
+    
+    # Drop leakage columns
+    chunk.drop(columns=[col for col in LEAKAGE_COLUMNS if col in chunk.columns], inplace=True)
 
-# Drop rows with missing loan_status
-df = df.dropna(subset=['loan_status'])
+    # Drop rows with missing loan_status
+    if 'loan_status' not in chunk.columns:
+        continue
+    chunk = chunk.dropna(subset=['loan_status'])
 
-# Map label
-df['risk_level'] = df['loan_status'].apply(map_risk_level)
-df.drop(columns=['loan_status'], inplace=True)
+    # Map risk level
+    chunk['risk_level'] = chunk['loan_status'].apply(map_risk_level)
+    chunk.drop(columns=['loan_status'], inplace=True)
 
-# Track missing predictive features
-missing_features = [col for col in PREDICTIVE_FEATURES if col not in df.columns]
-available_features = [col for col in PREDICTIVE_FEATURES if col in df.columns]
-log_msgs.append("Missing predictive features: " + ", ".join(missing_features))
+    # Keep only relevant columns
+    available_features = [col for col in PREDICTIVE_FEATURES if col in chunk.columns]
+    selected_columns = available_features + USER_INPUT_FEATURES + ['risk_level']
+    selected_columns = [col for col in selected_columns if col in chunk.columns]
+    chunk = chunk[selected_columns]
 
-# Compose final feature list
-final_features = available_features + USER_INPUT_FEATURES + ['risk_level']
-df = df[[col for col in final_features if col in df.columns]]
+    df_list.append(chunk)
+
+# Concatenate all processed chunks
+if not df_list:
+    raise ValueError("No valid chunks processed. Check column names or data filtering.")
+df = pd.concat(df_list, ignore_index=True)
 
 # Drop columns with >40% missing
 threshold = len(df) * 0.4
@@ -78,6 +84,11 @@ before = len(df)
 df = df.dropna()
 after = len(df)
 log_msgs.append(f"Dropped {before - after} rows with missing values")
+
+# Track missing predictive features across all chunks
+all_columns = set(df.columns)
+missing_features = [col for col in PREDICTIVE_FEATURES if col not in all_columns]
+log_msgs.append("Missing predictive features (after chunking): " + ", ".join(missing_features))
 
 # Save
 df.to_csv(OUTPUT_CSV, index=False)
