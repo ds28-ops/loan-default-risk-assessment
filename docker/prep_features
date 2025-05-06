@@ -1,9 +1,0 @@
-FROM python:3.9
-
-RUN pip install pandas scikit-learn pyarrow
-
-WORKDIR /app
-
-COPY docker/etl/prepare_features.py .
-
-CMD ["python", "prepare_features.py"]
