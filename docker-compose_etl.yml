@@ -16,15 +16,16 @@ services:
       - -c
       - |
         set -e
-        apt update && apt install -y curl unzip
+        apt update && apt install -y unzip python3-pip
+        pip install gdown
 
         echo "Resetting raw/ folder..."
         rm -rf /mnt/data/raw
         mkdir -p /mnt/data/raw
         cd /mnt/data/raw
 
-        echo "Downloading dataset zip..."
-        curl -L -o loan_data.zip 'https://drive.google.com/uc?export=download&id=12RwwHXdXDp2a0D-NoBxmnXlRLrSI7-wI'
+        echo "Downloading dataset zip from Google Drive..."
+        gdown --fuzzy 'https://drive.google.com/file/d/12RwwHXdXDp2a0D-NoBxmnXlRLrSI7-wI/view?usp=sharing' -O loan_data.zip
 
         echo "Unzipping..."
         unzip -o loan_data.zip
@@ -32,6 +33,7 @@ services:
 
         echo "Contents of raw/ directory:"
         ls -lh /mnt/data/raw
+
 
   transform:
     build:
