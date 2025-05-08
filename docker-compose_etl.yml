@@ -1,23 +1,63 @@
-version: '3.8'
+version: "3.8"
+
+volumes:
+  data_vol:
 
 services:
+  extract:
+    container_name: etl_extract_data
+    image: python:3.11
+    user: root
+    volumes:
+      - data_vol:/mnt/data
+    working_dir: /mnt/data
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+        apt update && apt install -y curl unzip
+
+        echo "Resetting raw/ folder..."
+        rm -rf /mnt/data/raw
+        mkdir -p /mnt/data/raw
+        cd /mnt/data/raw
+
+        echo "Downloading dataset zip..."
+        curl -L -o loan_data.zip 'https://drive.google.com/uc?export=download&id=12RwwHXdXDp2a0D-NoBxmnXlRLrSI7-wI'
+
+        echo "Unzipping..."
+        unzip -o loan_data.zip
+        rm -f loan_data.zip
+
+        echo "Contents of raw/ directory:"
+        ls -lh /mnt/data/raw
+
   transform:
     build:
       context: ./etl
     image: loan-etl
     container_name: loan_etl_container
+    depends_on:
+      - extract
     working_dir: /app
     volumes:
-      - /mnt/data:/mnt/data
+      - data_vol:/mnt/data
     command: ["python", "transform_data.py"]
 
   rclone_upload:
     image: rclone/rclone:latest
+    container_name: rclone_upload_container
     depends_on:
       - transform
-    container_name: rclone_upload_container
+    environment:
+      - RCLONE_CONFIG=/config/rclone/rclone.conf
     volumes:
-      - /mnt/data:/mnt/data
-      - ~/.config/rclone:/config/rclone
+      - data_vol:/mnt/data
+      - /mnt/object:/mnt/object  # Mounted object store
+      - ~/.config/rclone:/config/rclone:ro
     entrypoint: >
-      sh -c "rclone copy /mnt/data/processed/ mystore:loan-default-data/processed/ --config /config/rclone/rclone.conf --progress"
+      sh -c "
+      echo 'Copying processed data to mounted object store...' &&
+      cp -r /mnt/data/processed/* /mnt/object/loan-default-data/ &&
+      echo '✅ Data copied to object store: /mnt/object/loan-default-data'"
