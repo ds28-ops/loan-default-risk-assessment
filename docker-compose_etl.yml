@@ -45,7 +45,16 @@ services:
     working_dir: /app
     volumes:
       - data_vol:/mnt/data
-    command: ["python", "transform_data.py"]
+    command: >
+      sh -c '
+      echo "Waiting for raw data file to be ready..." &&
+      until [ -f /mnt/data/raw/accepted_2007_to_2018Q4.csv ]; do
+        echo "File not yet available, waiting 5 seconds..." &&
+        sleep 5
+      done &&
+      echo "Raw data file is ready, starting transformation..." &&
+      python transform_data.py
+      '
 
   rclone_upload:
     image: rclone/rclone:latest
