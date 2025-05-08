@@ -5,10 +5,10 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Install required packages
-RUN pip install pandas
+RUN pip install pandas xgboost scikit-learn matplotlib seaborn joblib
 
-# Copy the transformation script
+# Copy all ETL and training scripts
 COPY transform_data.py .
+COPY model_train.py .
 
-# Define the default command
-CMD ["python", "transform_data.py"]
+# No CMD here — execution is controlled via docker-compose

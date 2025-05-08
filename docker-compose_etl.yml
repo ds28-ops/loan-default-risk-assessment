@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  transform:
+    build:
+      context: ./etl
+    image: loan-etl
+    container_name: loan_etl_container
+    working_dir: /app
+    volumes:
+      - /mnt/data:/mnt/data
+    command: ["python", "transform_data.py"]
+
+  rclone_upload:
+    image: rclone/rclone:latest
+    depends_on:
+      - transform
+    container_name: rclone_upload_container
+    volumes:
+      - /mnt/data:/mnt/data
+      - ~/.config/rclone:/config/rclone
+    entrypoint: >
+      sh -c "rclone copy /mnt/data/processed/ mystore:loan-default-data/processed/ --config /config/rclone/rclone.conf --progress"
