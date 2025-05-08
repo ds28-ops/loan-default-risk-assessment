@@ -25,11 +25,11 @@ services:
         cd /mnt/data/raw
 
         echo "Downloading dataset zip from Google Drive..."
-        gdown --fuzzy 'https://drive.google.com/file/d/12RwwHXdXDp2a0D-NoBxmnXlRLrSI7-wI/view?usp=sharing' -O loan_data.zip
+        gdown --fuzzy 'https://drive.google.com/file/d/12RwwHXdXDp2a0D-NoBxmnXlRLrSI7-wI/view?usp=sharing' -O accepted_2007_to_2018Q4.csv.gz
 
         echo "Unzipping..."
-        unzip -o loan_data.zip
-        rm -f loan_data.zip
+        gunzip -f accepted_2007_to_2018Q4.csv.gz
+        
 
         echo "Contents of raw/ directory:"
         ls -lh /mnt/data/raw
