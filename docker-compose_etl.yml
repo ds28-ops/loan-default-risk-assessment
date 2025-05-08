@@ -65,10 +65,15 @@ services:
       - RCLONE_CONFIG=/config/rclone/rclone.conf
     volumes:
       - data_vol:/mnt/data
-      - /mnt/object:/mnt/object  # Mounted object store
+      - /mnt/object:/mnt/object
       - ~/.config/rclone:/config/rclone:ro
     entrypoint: >
       sh -c "
+      echo 'Waiting for processed data file...' &&
+      until [ -f /mnt/data/processed/train_ready.csv ]; do
+        echo 'Processed data not ready, waiting 5 seconds...' &&
+        sleep 5
+      done &&
       echo 'Copying processed data to mounted object store...' &&
       cp -r /mnt/data/processed/* /mnt/object/loan-default-data/ &&
       echo '✅ Data copied to object store: /mnt/object/loan-default-data'"
