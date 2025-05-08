@@ -74,6 +74,8 @@ services:
         echo 'Processed data not ready, waiting 5 seconds...' &&
         sleep 5
       done &&
+      echo 'Creating target directory...' &&
+      mkdir -p /mnt/object/loan-default-data/ &&
       echo 'Copying processed data to mounted object store...' &&
       cp -r /mnt/data/processed/* /mnt/object/loan-default-data/ &&
       echo '✅ Data copied to object store: /mnt/object/loan-default-data'"
