@@ -1,35 +1,34 @@
 import pandas as pd
 import os
+import numpy as np
+from sklearn.preprocessing import LabelEncoder
 
 RAW_PATH = "/mnt/data/raw/accepted_2007_to_2018Q4.csv"
-OUTPUT_DIR = "/mnt/data/processed"
-OUTPUT_CSV = os.path.join(OUTPUT_DIR, "train_ready.csv")
-LOG_FILE = os.path.join(OUTPUT_DIR, "etl_log.txt")
+OUTPUT_BASE = "/mnt/object/loan-default-data"
+OUTPUT_CLEAN = os.path.join(OUTPUT_BASE, "cleaned_data.csv")
+OUTPUT_TRAIN = os.path.join(OUTPUT_BASE, "train", "train_clean.csv")
+OUTPUT_VAL = os.path.join(OUTPUT_BASE, "val", "val_clean.csv")
+OUTPUT_EVAL = os.path.join(OUTPUT_BASE, "eval", "eval_clean.csv")
+LOG_FILE = os.path.join(OUTPUT_BASE, "etl_log.txt")
 CHUNK_SIZE = 10000
 
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(os.path.join(OUTPUT_BASE, "train"), exist_ok=True)
+os.makedirs(os.path.join(OUTPUT_BASE, "val"), exist_ok=True)
+os.makedirs(os.path.join(OUTPUT_BASE, "eval"), exist_ok=True)
 
-PREDICTIVE_FEATURES = [
-    'delinq_2yrs', 'fico_range_low', 'revol_util', 'pub_rec', 'acc_now_delinq',
-    'collections_12_mths_ex_med', 'chargeoff_within_12_mths', 'percent_bc_gt_75',
-    'inq_last_6mths', 'mths_since_last_delinq', 'num_tl_90g_dpd_24m', 'total_rev_hi_lim',
-    'all_util', 'num_accts_ever_120_pd', 'mths_since_recent_revol_delinq',
-    'mths_since_recent_bc_dlq', 'tot_coll_amt', 'inq_last_12m', 'open_il_12m',
-    'open_rv_12m', 'total_bal_il', 'tot_cur_bal', 'total_cu_tl', 'inq_fi',
-    'open_acc_6m', 'acc_open_past_24mths', 'mths_since_last_record',
-    'num_tl_120dpd_2m', 'num_tl_30dpd', 'num_op_rev_tl'
-]
-
-USER_INPUT_FEATURES = [
-    'loan_amnt', 'term', 'emp_length', 'home_ownership', 'annual_inc',
-    'purpose', 'application_type'
-]
-
-LEAKAGE_COLUMNS = [
-    'id', 'member_id', 'issue_d', 'url', 'desc', 'title', 'zip_code', 'addr_state',
+LEAKAGE_COLS = [
+    'id', 'member_id', 'url', 'desc', 'title', 'zip_code', 'addr_state',
     'out_prncp', 'out_prncp_inv', 'total_pymnt', 'total_pymnt_inv', 'total_rec_prncp',
     'total_rec_int', 'total_rec_late_fee', 'recoveries', 'collection_recovery_fee',
-    'last_pymnt_d', 'next_pymnt_d', 'last_credit_pull_d'
+    'last_pymnt_d', 'next_pymnt_d', 'last_credit_pull_d', 'last_pymnt_amnt',
+    'debt_settlement_flag', 'debt_settlement_flag_date', 'settlement_status',
+    'settlement_date', 'settlement_amount', 'settlement_percentage', 'settlement_term',
+    'hardship_flag', 'hardship_type', 'hardship_reason', 'hardship_status', 'deferral_term',
+    'hardship_amount', 'hardship_start_date', 'hardship_end_date',
+    'payment_plan_start_date', 'hardship_length', 'hardship_dpd',
+    'hardship_loan_status', 'orig_projected_additional_accrued_interest',
+    'hardship_payoff_balance_amount', 'hardship_last_payment_amount',
+    'emp_title'  # high cardinality
 ]
 
 def map_risk_level(status):
@@ -45,31 +44,26 @@ df_list = []
 
 # Read and process chunks
 for i, chunk in enumerate(pd.read_csv(RAW_PATH, chunksize=CHUNK_SIZE, low_memory=False)):
-    original_columns = set(chunk.columns)
-    
-    # Drop leakage columns
-    chunk.drop(columns=[col for col in LEAKAGE_COLUMNS if col in chunk.columns], inplace=True)
+    original_cols = set(chunk.columns)
+
+    # Drop leakage and identifier columns
+    drop_cols = [col for col in LEAKAGE_COLS if col in chunk.columns]
+    chunk.drop(columns=drop_cols, inplace=True)
 
     # Drop rows with missing loan_status
     if 'loan_status' not in chunk.columns:
         continue
     chunk = chunk.dropna(subset=['loan_status'])
 
-    # Map risk level
+    # Map risk_level
     chunk['risk_level'] = chunk['loan_status'].apply(map_risk_level)
     chunk.drop(columns=['loan_status'], inplace=True)
 
-    # Keep only relevant columns
-    available_features = [col for col in PREDICTIVE_FEATURES if col in chunk.columns]
-    selected_columns = available_features + USER_INPUT_FEATURES + ['risk_level']
-    selected_columns = [col for col in selected_columns if col in chunk.columns]
-    chunk = chunk[selected_columns]
-
     df_list.append(chunk)
 
-# Concatenate all processed chunks
+# Combine all chunks
 if not df_list:
-    raise ValueError("No valid chunks processed. Check column names or data filtering.")
+    raise ValueError("No valid chunks processed.")
 df = pd.concat(df_list, ignore_index=True)
 
 # Drop columns with >40% missing
@@ -79,23 +73,44 @@ to_drop = na_cols[na_cols > threshold].index.tolist()
 df.drop(columns=to_drop, inplace=True)
 log_msgs.append(f"Dropped columns with >40% missing: {to_drop}")
 
-# Drop remaining rows with missing
-before = len(df)
-df = df.dropna()
-after = len(df)
-log_msgs.append(f"Dropped {before - after} rows with missing values")
+# Handle remaining NaNs
+for col in df.columns:
+    if df[col].isnull().sum() > 0:
+        if df[col].dtype in ['float64', 'int64']:
+            median = df[col].median()
+            df[col].fillna(median, inplace=True)
+        elif df[col].dtype == 'object':
+            mode = df[col].mode()
+            if not mode.empty:
+                df[col].fillna(mode[0], inplace=True)
+            else:
+                df[col].fillna("Unknown", inplace=True)
 
-# Track missing predictive features across all chunks
-all_columns = set(df.columns)
-missing_features = [col for col in PREDICTIVE_FEATURES if col not in all_columns]
-log_msgs.append("Missing predictive features (after chunking): " + ", ".join(missing_features))
+# Encode categorical variables
+for col in df.select_dtypes(include='object').columns:
+    if df[col].nunique() <= 30:
+        df = pd.get_dummies(df, columns=[col], prefix=col)
+    else:
+        le = LabelEncoder()
+        df[col] = le.fit_transform(df[col].astype(str))
 
-# Save
-df.to_csv(OUTPUT_CSV, index=False)
+# Shuffle
+df = df.sample(frac=1.0, random_state=42).reset_index(drop=True)
 
-# Log
+# Save full cleaned CSV
+df.to_csv(OUTPUT_CLEAN, index=False)
+
+# Split 70-15-15
+train_end = int(0.7 * len(df))
+val_end = int(0.85 * len(df))
+
+df.iloc[:train_end].to_csv(OUTPUT_TRAIN, index=False)
+df.iloc[train_end:val_end].to_csv(OUTPUT_VAL, index=False)
+df.iloc[val_end:].to_csv(OUTPUT_EVAL, index=False)
+
+# Save log
 with open(LOG_FILE, 'w') as f:
     for line in log_msgs:
         f.write(line + "\n")
 
-print(f"ETL completed. Saved to {OUTPUT_CSV}. Log written to {LOG_FILE}.")
+print("ETL complete.")

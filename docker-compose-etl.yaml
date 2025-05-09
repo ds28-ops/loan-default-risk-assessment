@@ -2,6 +2,7 @@ version: "3.8"
 
 volumes:
   data_vol:
+  object_vol:
 
 services:
   extract:
@@ -29,11 +30,9 @@ services:
 
         echo "Unzipping..."
         gunzip -f accepted_2007_to_2018Q4.csv.gz
-        
 
         echo "Contents of raw/ directory:"
         ls -lh /mnt/data/raw
-
 
   transform:
     build:
@@ -45,6 +44,7 @@ services:
     working_dir: /app
     volumes:
       - data_vol:/mnt/data
+      - object_vol:/mnt/object
     command: >
       sh -c '
       echo "Waiting for raw data file to be ready..." &&
@@ -64,18 +64,14 @@ services:
     environment:
       - RCLONE_CONFIG=/config/rclone/rclone.conf
     volumes:
-      - data_vol:/mnt/data
-      - /mnt/object:/mnt/object
+      - object_vol:/mnt/object
       - ~/.config/rclone:/config/rclone:ro
     entrypoint: >
       sh -c "
-      echo 'Waiting for processed data file...' &&
-      until [ -f /mnt/data/processed/train_ready.csv ]; do
-        echo 'Processed data not ready, waiting 5 seconds...' &&
+      echo 'Waiting for cleaned_data.csv...' &&
+      until [ -f /mnt/object/loan-default-data/cleaned_data.csv ]; do
+        echo 'Cleaned data not ready, waiting 5 seconds...' &&
         sleep 5
       done &&
-      echo 'Creating target directory...' &&
-      mkdir -p /mnt/object/loan-default-data/ &&
-      echo 'Copying processed data to mounted object store...' &&
-      cp -r /mnt/data/processed/* /mnt/object/loan-default-data/ &&
-      echo '✅ Data copied to object store: /mnt/object/loan-default-data'"
+      echo '✅ Cleaned and split data is ready in /mnt/object/loan-default-data (no copy needed).'
+      "
