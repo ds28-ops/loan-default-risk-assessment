@@ -10,4 +10,3 @@ scrape_configs:
     metrics_path: '/metrics'
     static_configs:
       - targets: ['fastapi_server:8000']
-EOF
