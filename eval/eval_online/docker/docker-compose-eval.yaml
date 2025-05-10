@@ -34,6 +34,8 @@ services:
     depends_on:
       - fastapi_server
       - minio
+    networks:
+      - eval_net
 
 
   # MinIO object store
@@ -106,6 +108,8 @@ services:
       - /mnt/block/loanradar:/mnt/obj
     command: >
       bash -c "pip install mlflow && start-notebook.sh"
+    networks:
+      - eval_net
 
   # Airflow for feedback loop orchestration
 #   airflow-webserver:
@@ -184,13 +188,13 @@ services:
 #     networks:
 #       - eval_net
 
-# volumes:
-#   minio_data:
-#   food11:
-#     external: true
-#   airflow_shared:
-#   postgres_data:
+volumes:
+  minio_data:
+  # food11:
+  #   external: true
+  # airflow_shared:
+  # postgres_data:
 
-# networks:
-#   eval_net:
-#     driver: bridge
+networks:
+  eval_net:
+    driver: bridge
