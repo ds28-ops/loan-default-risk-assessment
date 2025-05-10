@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile
     container_name: fastapi_server
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - ./model.pth:/app/model.pth  # Mount your model file when it's ready
     networks:
