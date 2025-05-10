@@ -73,9 +73,11 @@ services:
         CATEGORICAL_ONEHOT = ["home_ownership", "verification_status"]
         CATEGORICAL_LABEL = ["sub_grade"]
 
-        df = pd.read_csv("train.csv", low_memory=False)
+        df = pd.read_csv("/mnt/data/LoanData/train.csv", low_memory=False)
         log_msgs = []
-
+        print("########################################################################################\n\n")
+        print(df.columns)
+        print("########################################################################################\n\n")
         # Select only desired columns
         missing_cols = [col for col in KEEP_COLS if col not in df.columns]
         if missing_cols:
