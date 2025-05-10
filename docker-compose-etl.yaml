@@ -47,88 +47,83 @@ services:
         import numpy as np
         import os
         from sklearn.preprocessing import StandardScaler, LabelEncoder
-        from datetime import datetime
 
-        DROP_COLS = [
-            "id", "url", "emp_title", "title", "zip_code", "issue_d", "pymnt_plan",
-            "out_prncp", "out_prncp_inv", "total_pymnt", "total_pymnt_inv",
-            "total_rec_prncp", "total_rec_int", "total_rec_late_fee", "recoveries",
-            "collection_recovery_fee", "last_pymnt_d", "last_pymnt_amnt",
-            "last_credit_pull_d", "last_fico_range_high", "last_fico_range_low",
-            "policy_code", "hardship_flag", "disbursement_method", "debt_settlement_flag"
-        ]
-
-        CATEGORICAL_ONEHOT = [
-            "term", "home_ownership", "verification_status",
-            "purpose", "application_type", "initial_list_status", "grade"
-        ]
-
-        CATEGORICAL_LABEL = ["sub_grade", "emp_length", "addr_state"]
         LABEL_COL = "risk_level"
 
-        def convert_earliest_cr_line(df):
-            ref_date = datetime(2020, 1, 1)
-            def months_since(x):
-                try:
-                    return (ref_date - datetime.strptime(x.strip(), "%b-%y")).days // 30
-                except:
-                    return np.nan
-            df["credit_age_months"] = df["earliest_cr_line"].apply(months_since)
-            return df
+        KEEP_COLS = [
+            "loan_amnt", "funded_amnt", "funded_amnt_inv", "int_rate", "installment",
+            "sub_grade", "home_ownership", "annual_inc", "verification_status", "dti",
+            "delinq_2yrs", "fico_range_low", "fico_range_high", "inq_last_6mths",
+            "open_acc", "pub_rec", "revol_bal", "revol_util", "total_acc",
+            "collections_12_mths_ex_med", "acc_now_delinq", "tot_coll_amt",
+            "tot_cur_bal", "open_act_il", "open_il_12m", "total_bal_il",
+            "open_rv_12m", "max_bal_bc", "all_util", "total_rev_hi_lim", "inq_fi",
+            "total_cu_tl", "inq_last_12m", "avg_cur_bal", "bc_open_to_buy", "bc_util",
+            "chargeoff_within_12_mths", "delinq_amnt", "mort_acc",
+            "mths_since_recent_inq", "num_actv_bc_tl", "num_actv_rev_tl",
+            "num_bc_sats", "num_bc_tl", "num_il_tl", "num_op_rev_tl",
+            "num_rev_accts", "num_rev_tl_bal_gt_0", "num_sats",
+            "num_tl_120dpd_2m", "num_tl_30dpd", "num_tl_90g_dpd_24m",
+            "num_tl_op_past_12m", "pct_tl_nvr_dlq", "percent_bc_gt_75",
+            "pub_rec_bankruptcies", "tax_liens", "tot_hi_cred_lim",
+            "total_bal_ex_mort", "total_bc_limit", "total_il_high_credit_limit",
+            LABEL_COL
+        ]
 
-        def main(input_csv, output_csv):
-            df = pd.read_csv(input_csv, low_memory=False)
-            log_msgs = []
+        CATEGORICAL_ONEHOT = ["home_ownership", "verification_status"]
+        CATEGORICAL_LABEL = ["sub_grade"]
 
-            # Drop and preserve label
-            label_series = df.pop(LABEL_COL) if LABEL_COL in df.columns else None
+        df = pd.read_csv("train.csv", low_memory=False)
+        log_msgs = []
 
-            drop_actual = [col for col in DROP_COLS if col in df.columns]
-            df.drop(columns=drop_actual, inplace=True)
-            log_msgs.append(f"Dropped columns: {drop_actual}")
+        # Select only desired columns
+        missing_cols = [col for col in KEEP_COLS if col not in df.columns]
+        if missing_cols:
+            raise ValueError(f"Missing expected columns: {missing_cols}")
+        df = df[KEEP_COLS]
 
-            if "earliest_cr_line" in df.columns:
-                df = convert_earliest_cr_line(df)
-                df.drop(columns=["earliest_cr_line"], inplace=True)
+        # Separate label
+        label_series = df.pop(LABEL_COL)
 
-            for col in df.columns:
-                if df[col].isnull().sum() > 0:
-                    if df[col].dtype == object:
-                        mode = df[col].mode()
-                        df[col] = df[col].fillna(mode[0] if not mode.empty else "Unknown")
-                        log_msgs.append(f"Filled NaNs in {col} with mode/Unknown")
-                    else:
-                        df[col] = df[col].fillna(df[col].median())
-                        log_msgs.append(f"Filled NaNs in {col} with median")
+        # Handle NaNs
+        for col in df.columns:
+            if df[col].isnull().sum() > 0:
+                if df[col].dtype == object:
+                    mode = df[col].mode()
+                    df[col] = df[col].fillna(mode[0] if not mode.empty else "Unknown")
+                    log_msgs.append(f"Filled NaNs in {col} with mode/Unknown")
+                else:
+                    df[col] = df[col].fillna(df[col].median())
+                    log_msgs.append(f"Filled NaNs in {col} with median")
 
-            for col in CATEGORICAL_ONEHOT:
-                if col in df.columns:
-                    dummies = pd.get_dummies(df[col], prefix=col)
-                    df = pd.concat([df.drop(columns=[col]), dummies], axis=1)
-                    log_msgs.append(f"One-hot encoded: {col}")
+        # One-hot encoding
+        for col in CATEGORICAL_ONEHOT:
+            dummies = pd.get_dummies(df[col], prefix=col)
+            df = pd.concat([df.drop(columns=[col]), dummies], axis=1)
+            log_msgs.append(f"One-hot encoded: {col}")
 
-            for col in CATEGORICAL_LABEL:
-                if col in df.columns:
-                    le = LabelEncoder()
-                    df[col] = le.fit_transform(df[col].astype(str))
-                    log_msgs.append(f"Label-encoded: {col}")
+        # Label encoding
+        for col in CATEGORICAL_LABEL:
+            le = LabelEncoder()
+            df[col] = le.fit_transform(df[col].astype(str))
+            log_msgs.append(f"Label-encoded: {col}")
 
-            numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-            scaler = StandardScaler()
-            df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
-            log_msgs.append(f"Standard-scaled columns: {numeric_cols}")
+        # Scale numeric features
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        scaler = StandardScaler()
+        df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
+        log_msgs.append(f"Standard-scaled columns: {numeric_cols}")
 
-            if label_series is not None:
-                df[LABEL_COL] = label_series.reset_index(drop=True)
-                log_msgs.append(f"Re-attached label column '{LABEL_COL}'.")
+        # Reattach label
+        df[LABEL_COL] = label_series.reset_index(drop=True)
+        log_msgs.append("Re-attached label column.")
 
-            df.to_csv(output_csv, index=False)
-            with open(os.path.join(os.path.dirname(output_csv), "etl_log.txt"), "w") as f:
-                for line in log_msgs:
-                    f.write(line + "\\n")
-            print("✅ Transformation complete.")
-
-        main("train.csv", "train_transformed.csv")
+        # Save
+        df.to_csv("train_transformed.csv", index=False)
+        with open("etl_log.txt", "w") as f:
+            for line in log_msgs:
+                f.write(line + "\\n")
+        print("✅ Transformation complete.")
                 '
 
                 echo "Listing contents of /data/LoanData after transform stage:"
