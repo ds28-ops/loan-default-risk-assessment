@@ -76,19 +76,8 @@ services:
       - "8888:8888"
     shm_size: 8g
     environment:
-      - MLFLOW_TRACKING_URI=http://${HOST_IP}:8000/
-      - FOOD11_DATA_DIR=/mnt/Food-11
+      - MLFLOW_TRACKING_URI=http://${HOST_IP}:8000
     volumes:
-      - ~/data-persist-chi/workspace:/home/jovyan/work/
-      - type: bind
-        source: /mnt/object
-        target: /mnt/Food-11
-        read_only: true
-      - type: bind
-        source: /mnt/object
-        target: /mnt/Food-11
-        read_only: true
+      - ~/loanradar:/home/kvm
     command: >
-      bash -c "python3 -m pip install mlflow && start-notebook.sh"
-
-
+      bash -c "pip install mlflow && start-notebook.sh"
