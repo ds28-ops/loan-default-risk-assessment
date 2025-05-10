@@ -89,4 +89,4 @@ services:
       #   target: /mnt/data
     
     command: >
-      bash -c "pip install mlflow && start-notebook.sh && onnx && onnxruntime && xgboost"
+      bash -c "pip install mlflow onnx onnxruntime xgboost && start-notebook.sh"
