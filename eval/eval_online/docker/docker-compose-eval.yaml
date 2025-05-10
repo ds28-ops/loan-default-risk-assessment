@@ -1,34 +1,34 @@
 services:
 
   # FastAPI model inference service
-  fastapi_server:
-    build:
-      context: ../fastapi_pt
-      dockerfile: Dockerfile
-    container_name: fastapi_server
-    ports:
-      - "8000:8000"
-    # depends_on:
-    #   - minio
+  # fastapi_server:
+  #   build:
+  #     context: ../fastapi_pt
+  #     dockerfile: Dockerfile
+  #   container_name: fastapi_server
+  #   ports:
+  #     - "8000:8000"
+  #   # depends_on:
+  #   #   - minio
 
   # Flask front-end app
-  flask:
-    build:
-      context: ../../../flask_app
-      dockerfile: Dockerfile
-    container_name: flask
-    ports:
-      - "5000:5000"
-    environment:
-      - FASTAPI_SERVER_URL=http://fastapi_server:8000
-      - MINIO_URL=http://minio:9000
-      - MINIO_USER=your-access-key
-      - MINIO_PASSWORD=your-secret-key
-    depends_on:
-      - fastapi_server
-      #- minio
-    networks:
-      - eval_net
+  # flask:
+  #   build:
+  #     context: ../../../flask_app
+  #     dockerfile: Dockerfile
+  #   container_name: flask
+  #   ports:
+  #     - "5000:5000"
+  #   environment:
+  #     - FASTAPI_SERVER_URL=http://fastapi_server:8000
+  #     - MINIO_URL=http://minio:9000
+  #     - MINIO_USER=your-access-key
+  #     - MINIO_PASSWORD=your-secret-key
+  #   depends_on:
+  #     - fastapi_server
+  #     #- minio
+  #   networks:
+  #     - eval_net
 
   # MinIO object store
   # minio:
