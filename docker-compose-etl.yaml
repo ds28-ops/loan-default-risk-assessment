@@ -1,7 +1,7 @@
 name: train-transform
 
 volumes:
-  loanradar:
+  /mnt/data:
 
 services:
   extract-data:
@@ -9,8 +9,8 @@ services:
     image: python:3.11
     user: root
     volumes:
-      - loanradar:/data
-    working_dir: /data
+      - /mnt/data:/mnt/data
+    working_dir: /mnt/data
     command:
       - bash
       - -c
@@ -26,15 +26,15 @@ services:
         curl -L 'https://drive.google.com/uc?export=download&id=1E8Eu3lhcVJx3Rw8X7dUdKTQicj20CKw1' -o train.csv
 
         echo "Listing contents of /data after extract stage:"
-        ls -l /data
+        ls -l /mnt/data/LoanData
 
   transform-data:
     container_name: etl_transform_data
     image: python:3.11
     user: root
     volumes:
-      - loanradar:/data
-    working_dir: /data/LoanData
+      - /mnt/data:/mnt/data
+    working_dir: /mnt/data/LoanData
     command:
       - bash
       - -c
