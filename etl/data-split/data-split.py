@@ -73,20 +73,20 @@ for i, chunk in enumerate(pd.read_csv(RAW_PATH, chunksize=CHUNK_SIZE, low_memory
     log_msgs.append(f"Dropped cols with >40% NaNs: {high_nan_cols}")
 
     # Fill missing values
-    for col in chunk.columns:
-        if chunk[col].isnull().sum() > 0:
-            if chunk[col].dtype in ['float64', 'int64']:
-                median = chunk[col].median()
-                chunk[col].fillna(median, inplace=True)
-                log_msgs.append(f"Filled NaNs in numeric column '{col}' with median: {median}")
-            elif chunk[col].dtype == 'object':
-                mode = chunk[col].mode()
-                if not mode.empty:
-                    chunk[col].fillna(mode[0], inplace=True)
-                    log_msgs.append(f"Filled NaNs in categorical column '{col}' with mode: {mode[0]}")
-                else:
-                    chunk[col].fillna("Unknown", inplace=True)
-                    log_msgs.append(f"Filled NaNs in column '{col}' with 'Unknown'")
+    # for col in chunk.columns:
+    #     if chunk[col].isnull().sum() > 0:
+    #         if chunk[col].dtype in ['float64', 'int64']:
+    #             median = chunk[col].median()
+    #             chunk[col].fillna(median, inplace=True)
+    #             log_msgs.append(f"Filled NaNs in numeric column '{col}' with median: {median}")
+    #         elif chunk[col].dtype == 'object':
+    #             mode = chunk[col].mode()
+    #             if not mode.empty:
+    #                 chunk[col].fillna(mode[0], inplace=True)
+    #                 log_msgs.append(f"Filled NaNs in categorical column '{col}' with mode: {mode[0]}")
+    #             else:
+    #                 chunk[col].fillna("Unknown", inplace=True)
+    #                 log_msgs.append(f"Filled NaNs in column '{col}' with 'Unknown'")
 
     # Drop all object columns not in KEEP_CATEGORICAL
     obj_cols = chunk.select_dtypes(include='object').columns.tolist()
@@ -95,12 +95,12 @@ for i, chunk in enumerate(pd.read_csv(RAW_PATH, chunksize=CHUNK_SIZE, low_memory
             chunk.drop(columns=[col], inplace=True)
             log_msgs.append(f"Dropped high-cardinality/unapproved column: {col}")
 
-    # One-hot encode approved categorical columns
-    for col in KEEP_CATEGORICAL:
-        if col in chunk.columns:
-            dummies = pd.get_dummies(chunk[col], prefix=col)
-            chunk = pd.concat([chunk.drop(columns=[col]), dummies], axis=1)
-            log_msgs.append(f"One-hot encoded: {col}")
+    # # One-hot encode approved categorical columns
+    # for col in KEEP_CATEGORICAL:
+    #     if col in chunk.columns:
+    #         dummies = pd.get_dummies(chunk[col], prefix=col)
+    #         chunk = pd.concat([chunk.drop(columns=[col]), dummies], axis=1)
+    #         log_msgs.append(f"One-hot encoded: {col}")
 
     # Drop any remaining rows with NaNs
     pre_drop_shape = chunk.shape
