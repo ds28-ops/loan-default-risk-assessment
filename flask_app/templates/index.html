@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head><title>Loan Risk Predictor</title></head>
+<body>
+  <h1>Enter Loan Application Info</h1>
+  <form method="POST">
+    <label>Loan Amount:</label><input name="loan_amnt"><br>
+    <label>Term:</label><input name="term"><br>
+    <label>Annual Income:</label><input name="annual_inc"><br>
+    <!-- Add other fields here -->
+    <button type="submit">Submit</button>
+  </form>
+  {% if prediction %}
+    <h2>Predicted Risk: {{ prediction.risk_level }}</h2>
+  {% endif %}
+</body>
+</html>
