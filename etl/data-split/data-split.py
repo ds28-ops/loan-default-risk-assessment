@@ -117,11 +117,11 @@ if not df_list:
 
 df = pd.concat(df_list, ignore_index=True)
 log_msgs.append(f"\n✅ Combined processed shape before final NaN drop: {df.shape}")
-
+print("Concat Done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 # Final drop of rows with NaNs (just in case)
-pre_final = df.shape[0]
-df.dropna(inplace=True)
-log_msgs.append(f"Final NaN row drop after merge: {pre_final - df.shape[0]} rows")
+# pre_final = df.shape[0]
+# df.dropna(inplace=True)
+# log_msgs.append(f"Final NaN row drop after merge: {pre_final - df.shape[0]} rows")
 
 # Shuffle before split
 df = df.sample(frac=1.0, random_state=42).reset_index(drop=True)
