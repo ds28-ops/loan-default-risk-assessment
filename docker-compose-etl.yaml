@@ -16,7 +16,7 @@ services:
       - -c
       - |
         set -e
-
+        pip install gdown
         echo "Resetting dataset directory..."
         rm -rf LoanData
         mkdir -p LoanData
