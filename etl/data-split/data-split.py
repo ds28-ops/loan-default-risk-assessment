@@ -5,18 +5,18 @@ from sklearn.model_selection import train_test_split
 # Paths
 INPUT_CSV = "/mnt/data/raw/accepted_2007_to_2018Q4.csv"
 OUTPUT_DIR = "/mnt/object/loan-default-data/"
+INTERMEDIATE_CSV = os.path.join(OUTPUT_DIR, "cleaned_streamed.csv")
 TRAIN_DIR = os.path.join(OUTPUT_DIR, "train")
 EVAL_DIR = os.path.join(OUTPUT_DIR, "eval")
 VAL_DIR = os.path.join(OUTPUT_DIR, "val")
+CHUNK_SIZE = 50000
 
-CHUNK_SIZE = 10000
-
-# Create directories
+# Ensure output dirs exist
 os.makedirs(TRAIN_DIR, exist_ok=True)
 os.makedirs(EVAL_DIR, exist_ok=True)
 os.makedirs(VAL_DIR, exist_ok=True)
 
-# Risk level mapping
+# Map loan_status to risk_level
 def map_risk_level(status):
     if status in ["Fully Paid", "Current"]:
         return "Low"
@@ -25,44 +25,50 @@ def map_risk_level(status):
     else:
         return "High"
 
-# Step 1: Load and process chunks
-chunks = []
-for chunk in pd.read_csv(INPUT_CSV, chunksize=CHUNK_SIZE, low_memory=False):
+# Stream-clean and write to intermediate CSV
+if os.path.exists(INTERMEDIATE_CSV):
+    os.remove(INTERMEDIATE_CSV)
+
+header_written = False
+for i, chunk in enumerate(pd.read_csv(INPUT_CSV, chunksize=CHUNK_SIZE, low_memory=False)):
     if 'loan_status' not in chunk.columns:
         continue
 
-    # Drop rows with missing loan_status
-    chunk = chunk.dropna(subset=['loan_status'])
+    print(f"✅ Processing chunk {i}...")
 
-    # Map risk level
+    # Filter and map
+    chunk = chunk[chunk['loan_status'].notna()]
     chunk['risk_level'] = chunk['loan_status'].apply(map_risk_level)
     chunk.drop(columns=['loan_status'], inplace=True)
 
-    chunks.append(chunk)
+    # Drop columns with >40% missing in this chunk
+    threshold = len(chunk) * 0.4
+    to_drop = chunk.columns[chunk.isnull().sum() > threshold]
+    chunk.drop(columns=to_drop, inplace=True)
 
-# Step 2: Concatenate all chunks
-if not chunks:
-    raise ValueError("No valid data found in chunks.")
+    # Drop remaining rows with NaNs
+    chunk.dropna(inplace=True)
 
-df = pd.concat(chunks, ignore_index=True)
+    # Append to intermediate CSV
+    chunk.to_csv(INTERMEDIATE_CSV, mode='a', header=not header_written, index=False)
+    header_written = True
 
-# Step 3: Drop columns with >40% missing
-threshold = len(df) * 0.4
-na_cols = df.isnull().sum()
-to_drop = na_cols[na_cols > threshold].index.tolist()
-df.drop(columns=to_drop, inplace=True)
+print("✅ All chunks processed. Loading cleaned data for split...")
 
-# Step 4: Stratified split
+# Load full cleaned dataset
+df = pd.read_csv(INTERMEDIATE_CSV)
+
+# Stratified 80-10-10 split
 train_df, temp_df = train_test_split(df, test_size=0.2, random_state=42, stratify=df["risk_level"])
 eval_df, val_df = train_test_split(temp_df, test_size=0.5, random_state=42, stratify=temp_df["risk_level"])
 
-# Step 5: Save
+# Save final splits
 train_df.to_csv(os.path.join(TRAIN_DIR, "train.csv"), index=False)
 eval_df.to_csv(os.path.join(EVAL_DIR, "eval.csv"), index=False)
 val_df.to_csv(os.path.join(VAL_DIR, "val.csv"), index=False)
 
-print("✅ Dataset successfully chunked, cleaned, labeled, and split:")
-print(f"- Dropped columns with >40% NaNs: {to_drop}")
-print(f"- Train: {len(train_df)} samples → {TRAIN_DIR}")
-print(f"- Eval:  {len(eval_df)} samples → {EVAL_DIR}")
-print(f"- Val:   {len(val_df)} samples → {VAL_DIR}")
+print("✅ Dataset successfully cleaned, labeled, and split:")
+print(f"- Total: {len(df)} rows")
+print(f"- Train: {len(train_df)} → {TRAIN_DIR}")
+print(f"- Eval : {len(eval_df)} → {EVAL_DIR}")
+print(f"- Val  : {len(val_df)} → {VAL_DIR}")
