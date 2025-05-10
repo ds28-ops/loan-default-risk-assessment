@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 # Paths
-INPUT_CSV = "/mnt/object/loan-default-data/train_ready.csv"
+INPUT_CSV = " /mnt/data/raw/accepted_2007_to_2018Q4.csv"
 OUTPUT_DIR = "/mnt/object/loan-default-data/"
 TRAIN_DIR = os.path.join(OUTPUT_DIR, "train")
 EVAL_DIR = os.path.join(OUTPUT_DIR, "eval")
