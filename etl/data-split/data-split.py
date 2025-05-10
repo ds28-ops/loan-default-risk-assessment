@@ -73,20 +73,20 @@ for i, chunk in enumerate(pd.read_csv(RAW_PATH, chunksize=CHUNK_SIZE, low_memory
     log_msgs.append(f"Dropped cols with >40% NaNs: {high_nan_cols}")
 
     # Fill missing values
-    # for col in chunk.columns:
-    #     if chunk[col].isnull().sum() > 0:
-    #         if chunk[col].dtype in ['float64', 'int64']:
-    #             median = chunk[col].median()
-    #             chunk[col].fillna(median, inplace=True)
-    #             log_msgs.append(f"Filled NaNs in numeric column '{col}' with median: {median}")
-    #         elif chunk[col].dtype == 'object':
-    #             mode = chunk[col].mode()
-    #             if not mode.empty:
-    #                 chunk[col].fillna(mode[0], inplace=True)
-    #                 log_msgs.append(f"Filled NaNs in categorical column '{col}' with mode: {mode[0]}")
-    #             else:
-    #                 chunk[col].fillna("Unknown", inplace=True)
-    #                 log_msgs.append(f"Filled NaNs in column '{col}' with 'Unknown'")
+    for col in chunk.columns:
+        if chunk[col].isnull().sum() > 0:
+            if chunk[col].dtype in ['float64', 'int64']:
+                median = chunk[col].median()
+                chunk[col].fillna(median, inplace=True)
+                log_msgs.append(f"Filled NaNs in numeric column '{col}' with median: {median}")
+            elif chunk[col].dtype == 'object':
+                mode = chunk[col].mode()
+                if not mode.empty:
+                    chunk[col].fillna(mode[0], inplace=True)
+                    log_msgs.append(f"Filled NaNs in categorical column '{col}' with mode: {mode[0]}")
+                else:
+                    chunk[col].fillna("Unknown", inplace=True)
+                    log_msgs.append(f"Filled NaNs in column '{col}' with 'Unknown'")
 
     # Drop all object columns not in KEEP_CATEGORICAL
     obj_cols = chunk.select_dtypes(include='object').columns.tolist()
