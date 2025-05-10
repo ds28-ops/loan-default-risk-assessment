@@ -26,7 +26,7 @@ services:
       - MINIO_PASSWORD=your-secret-key
     depends_on:
       - fastapi_server
-      - minio
+      #- minio
     networks:
       - eval_net
 
