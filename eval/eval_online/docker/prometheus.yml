@@ -2,23 +2,11 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'fastapi_server'
-    static_configs:
-      - targets: ['fastapi_server:8000']
-
-  - job_name: 'flask'
-    static_configs:
-      - targets: ['flask:5000']
-
-  - job_name: 'jupyter'
-    static_configs:
-      - targets: ['jupyter:8888']
-
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
-
-  # Uncomment if you add cadvisor for container-level metrics
-  # - job_name: 'cadvisor'
-  #   static_configs:
-  #     - targets: ['cadvisor:8080']
+  
+  - job_name: 'fastapi'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['fastapi_server:8000']
