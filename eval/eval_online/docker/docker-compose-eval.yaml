@@ -3,7 +3,7 @@ services:
   # FastAPI model inference service
   fastapi_server:
     build:
-      context: /home/cc/eval/eval_online/fastapi_pt
+      context: ../fastapi_pt
       dockerfile: Dockerfile
     container_name: fastapi_server
     ports:
@@ -20,11 +20,6 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - FASTAPI_URL=http://fastapi_server:8000/predict
-
-    networks:
-      - eval_net
-    environment:
       - FASTAPI_SERVER_URL=http://fastapi_server:8000
       - MINIO_URL=http://minio:9000
       - MINIO_USER=your-access-key
@@ -34,7 +29,6 @@ services:
       - minio
     networks:
       - eval_net
-
 
   # MinIO object store
   minio:
