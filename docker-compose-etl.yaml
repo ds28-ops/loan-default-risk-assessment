@@ -136,7 +136,7 @@ services:
     container_name: etl_load_data
     image: rclone/rclone:latest
     volumes:
-    - /mnt/data:/mnt/data 
+      - /mnt/data:/mnt/data 
       - /mnt/object:/mnt/object
       - ~/.config/rclone/rclone.conf:/root/.config/rclone/rclone.conf:ro
     entrypoint: /bin/sh
