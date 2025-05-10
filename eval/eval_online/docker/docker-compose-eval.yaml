@@ -53,8 +53,8 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_SERVER_ROOT_URL=http://129.114.25.120:3000  # Replace with your actual IP
       - GF_SERVER_DOMAIN=129.114.25.120
-    # depends_on:
-    #   - prometheus
+    depends_on:
+      - prometheus
     # networks:
     #   - eval_net
 
