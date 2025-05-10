@@ -1,22 +1,10 @@
 import pandas as pd
-import os
 import numpy as np
-from sklearn.preprocessing import LabelEncoder
+import argparse
+import os
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 
-RAW_PATH = "/mnt/data/raw/accepted_2007_to_2018Q4.csv"
-OUTPUT_BASE = "/mnt/object/loan-default-data"
-OUTPUT_CLEAN = os.path.join(OUTPUT_BASE, "cleaned_data.csv")
-OUTPUT_TRAIN = os.path.join(OUTPUT_BASE, "train", "train_clean.csv")
-OUTPUT_VAL = os.path.join(OUTPUT_BASE, "val", "val_clean.csv")
-OUTPUT_EVAL = os.path.join(OUTPUT_BASE, "eval", "eval_clean.csv")
-LOG_FILE = os.path.join(OUTPUT_BASE, "etl_log.txt")
-CHUNK_SIZE = 10000
-
-os.makedirs(os.path.join(OUTPUT_BASE, "train"), exist_ok=True)
-os.makedirs(os.path.join(OUTPUT_BASE, "val"), exist_ok=True)
-os.makedirs(os.path.join(OUTPUT_BASE, "eval"), exist_ok=True)
-
-LEAKAGE_COLS = [
+DROP_COLS = [
     'id', 'member_id', 'url', 'desc', 'title', 'zip_code', 'addr_state',
     'out_prncp', 'out_prncp_inv', 'total_pymnt', 'total_pymnt_inv', 'total_rec_prncp',
     'total_rec_int', 'total_rec_late_fee', 'recoveries', 'collection_recovery_fee',
@@ -28,89 +16,100 @@ LEAKAGE_COLS = [
     'payment_plan_start_date', 'hardship_length', 'hardship_dpd',
     'hardship_loan_status', 'orig_projected_additional_accrued_interest',
     'hardship_payoff_balance_amount', 'hardship_last_payment_amount',
-    'emp_title'  # high cardinality
+    'emp_title', 'sub_grade', 'issue_d', 'application_type', 'disbursement_method', 'initial_list_status'
 ]
 
-def map_risk_level(status):
-    if status in ["Fully Paid", "Current"]:
-        return "Low"
-    elif status in ["Late (16-30 days)", "In Grace Period"]:
-        return "Medium"
-    else:
-        return "High"
+KEEP_CATEGORICAL = ['term', 'emp_length', 'home_ownership', 'verification_status', 'purpose']
+LABEL_COL = 'risk_level'
 
-log_msgs = []
-df_list = []
+def is_large_numeric(col):
+    return np.issubdtype(col.dtype, np.number) and col.max() > 1000
 
-# Read and process chunks
-for i, chunk in enumerate(pd.read_csv(RAW_PATH, chunksize=CHUNK_SIZE, low_memory=False)):
-    original_cols = set(chunk.columns)
+def main(input_path, output_path):
+    log_msgs = []
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    log_path = os.path.join(os.path.dirname(output_path), "etl_log.txt")
 
-    # Drop leakage and identifier columns
-    drop_cols = [col for col in LEAKAGE_COLS if col in chunk.columns]
-    chunk.drop(columns=drop_cols, inplace=True)
+    df = pd.read_csv(input_path, low_memory=False)
+    log_msgs.append(f"Original shape: {df.shape}")
 
-    # Drop rows with missing loan_status
-    if 'loan_status' not in chunk.columns:
-        continue
-    chunk = chunk.dropna(subset=['loan_status'])
+    # Separate label if exists
+    label_series = None
+    if LABEL_COL in df.columns:
+        label_series = df[LABEL_COL]
+        df = df.drop(columns=[LABEL_COL])
+        log_msgs.append(f"Preserved label column '{LABEL_COL}' separately.")
 
-    # Map risk_level
-    chunk['risk_level'] = chunk['loan_status'].apply(map_risk_level)
-    chunk.drop(columns=['loan_status'], inplace=True)
+    # Drop known leakage/unwanted columns
+    to_drop = [col for col in DROP_COLS if col in df.columns]
+    df.drop(columns=to_drop, inplace=True)
+    log_msgs.append(f"Dropped columns: {to_drop}")
 
-    df_list.append(chunk)
+    # Drop rows with too many NaNs
+    row_nan_threshold = int(0.4 * df.shape[1])
+    df = df[df.isnull().sum(axis=1) <= row_nan_threshold]
+    log_msgs.append(f"Remaining rows after NaN row filter: {len(df)}")
 
-# Combine all chunks
-if not df_list:
-    raise ValueError("No valid chunks processed.")
-df = pd.concat(df_list, ignore_index=True)
-
-# Drop columns with >40% missing
-threshold = len(df) * 0.4
-na_cols = df.isnull().sum()
-to_drop = na_cols[na_cols > threshold].index.tolist()
-df.drop(columns=to_drop, inplace=True)
-log_msgs.append(f"Dropped columns with >40% missing: {to_drop}")
-
-# Handle remaining NaNs
-for col in df.columns:
-    if df[col].isnull().sum() > 0:
-        if df[col].dtype in ['float64', 'int64']:
-            median = df[col].median()
-            df[col].fillna(median, inplace=True)
-        elif df[col].dtype == 'object':
-            mode = df[col].mode()
-            if not mode.empty:
-                df[col].fillna(mode[0], inplace=True)
+    # Fill missing values (excluding label)
+    for col in df.columns:
+        if df[col].isnull().sum() > 0:
+            if np.issubdtype(df[col].dtype, np.number):
+                median = df[col].median()
+                df[col].fillna(median, inplace=True)
+                log_msgs.append(f"Filled NaNs in numeric column '{col}' with median: {median}")
             else:
-                df[col].fillna("Unknown", inplace=True)
+                mode_val = df[col].mode()
+                if not mode_val.empty:
+                    df[col].fillna(mode_val[0], inplace=True)
+                    log_msgs.append(f"Filled NaNs in categorical column '{col}' with mode: {mode_val[0]}")
+                else:
+                    df[col].fillna("Unknown", inplace=True)
+                    log_msgs.append(f"Filled NaNs in column '{col}' with 'Unknown'")
 
-# Encode categorical variables
-for col in df.select_dtypes(include='object').columns:
-    if df[col].nunique() <= 30:
-        df = pd.get_dummies(df, columns=[col], prefix=col)
-    else:
-        le = LabelEncoder()
-        df[col] = le.fit_transform(df[col].astype(str))
+    # Normalize large numeric columns
+    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    large_numeric = [col for col in numeric_cols if is_large_numeric(df[col])]
+    if large_numeric:
+        scaler = StandardScaler()
+        df[large_numeric] = scaler.fit_transform(df[large_numeric])
+        log_msgs.append(f"Standard-scaled numeric columns: {large_numeric}")
 
-# Shuffle
-df = df.sample(frac=1.0, random_state=42).reset_index(drop=True)
+    # Encode categorical columns
+    object_cols = df.select_dtypes(include='object').columns.tolist()
+    for col in object_cols:
+        if col not in KEEP_CATEGORICAL:
+            df.drop(columns=[col], inplace=True)
+            log_msgs.append(f"Dropped high-cardinality/unapproved column: '{col}'")
+            continue
 
-# Save full cleaned CSV
-df.to_csv(OUTPUT_CLEAN, index=False)
+        n_unique = df[col].nunique()
+        if n_unique <= 30:
+            dummies = pd.get_dummies(df[col], prefix=col)
+            df = pd.concat([df.drop(columns=[col]), dummies], axis=1)
+            log_msgs.append(f"One-hot encoded: '{col}'")
+        else:
+            le = LabelEncoder()
+            df[col] = le.fit_transform(df[col].astype(str))
+            log_msgs.append(f"Label-encoded: '{col}'")
 
-# Split 70-15-15
-train_end = int(0.7 * len(df))
-val_end = int(0.85 * len(df))
+    # Re-attach label if it was present
+    if label_series is not None:
+        df[LABEL_COL] = label_series.reset_index(drop=True)
+        log_msgs.append(f"Re-attached label column '{LABEL_COL}' to transformed data.")
 
-df.iloc[:train_end].to_csv(OUTPUT_TRAIN, index=False)
-df.iloc[train_end:val_end].to_csv(OUTPUT_VAL, index=False)
-df.iloc[val_end:].to_csv(OUTPUT_EVAL, index=False)
+    # Save
+    df.to_csv(output_path, index=False)
+    log_msgs.append(f"Saved transformed file to: {output_path}")
 
-# Save log
-with open(LOG_FILE, 'w') as f:
-    for line in log_msgs:
-        f.write(line + "\n")
+    with open(log_path, 'w') as f:
+        for line in log_msgs:
+            f.write(line + "\n")
 
-print("ETL complete.")
+    print("✅ Transformation complete.")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Loan Feature Transformer")
+    parser.add_argument("--input_path", required=True, help="Path to input CSV")
+    parser.add_argument("--output_path", required=True, help="Path to output transformed CSV")
+    args = parser.parse_args()
+    main(args.input_path, args.output_path)
