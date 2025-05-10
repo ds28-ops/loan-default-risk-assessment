@@ -2,7 +2,7 @@ version: "3.8"
 services:
   fastapi_server:
     build:
-      context: ../fastapi_pt
+      context: ./fastapi_pt
       dockerfile: Dockerfile
     container_name: fastapi_server
     ports:
@@ -10,7 +10,7 @@ services:
 
   flask:
     build:
-      context: ../flask
+      context: ./flask
       dockerfile: Dockerfile
     container_name: flask_frontend
     ports:
