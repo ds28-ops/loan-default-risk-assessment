@@ -53,7 +53,7 @@ services:
         sleep 5
       done &&
       echo "Raw data file is ready, starting transformation..." &&
-      python transform_data.py
+      python transform_data_old.py
       '
 
   rclone_upload:
