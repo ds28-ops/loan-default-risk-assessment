@@ -69,24 +69,24 @@ services:
       mlflow server --backend-store-uri postgresql://user:password@postgres/mlflowdb 
       --artifacts-destination s3://mlflow-artifacts/ --serve-artifacts --host 0.0.0.0 --port 8000"
 
-  jupyter:
-    image: quay.io/jupyter/pytorch-notebook:pytorch-2.5.1
-    container_name: jupyter
-    ports:
-      - "8888:8888"
-    shm_size: 8g
-    environment:
-      - MLFLOW_TRACKING_URI=http://${HOST_IP}:8000/
-    volumes:
-      - ~/loanradar:/home/jovyan/work
-      - /mnt/object:/mnt/object
-      - /mnt/block:/mnt/block
-      # - type: bind
-      #   source: /mnt/object
-      #   target: /mnt/object
-      # - type: bind
-      #   source: /mnt/data
-      #   target: /mnt/data
+  # jupyter:
+  #   image: quay.io/jupyter/pytorch-notebook:pytorch-2.5.1
+  #   container_name: jupyter
+  #   ports:
+  #     - "8888:8888"
+  #   shm_size: 8g
+  #   environment:
+  #     - MLFLOW_TRACKING_URI=http://${HOST_IP}:8000/
+  #   volumes:
+  #     - ~/loanradar:/home/jovyan/work
+  #     - /mnt/object:/mnt/object
+  #     - /mnt/block:/mnt/block
+  #     # - type: bind
+  #     #   source: /mnt/object
+  #     #   target: /mnt/object
+  #     # - type: bind
+  #     #   source: /mnt/data
+  #     #   target: /mnt/data
     
-    command: >
-      bash -c "pip install mlflow onnx onnxruntime xgboost && start-notebook.sh"
+  #   command: >
+  #     bash -c "pip install mlflow onnx onnxruntime xgboost && start-notebook.sh"
