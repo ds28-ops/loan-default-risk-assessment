@@ -1,7 +1,8 @@
 name: train-transform
 
 volumes:
-  /mnt/data:
+  data_vol:
+  object_vol:
 
 services:
   extract-data:
@@ -9,7 +10,7 @@ services:
     image: python:3.11
     user: root
     volumes:
-      - /mnt/data:/mnt/data
+      - data_vol:/mnt/data
     working_dir: /mnt/data
     command:
       - bash
@@ -33,7 +34,7 @@ services:
     image: python:3.11
     user: root
     volumes:
-      - /mnt/data:/mnt/data
+      - data_vol:/mnt/data
     working_dir: /mnt/data/LoanData
     command:
       - bash
@@ -134,7 +135,7 @@ services:
     container_name: etl_load_data
     image: rclone/rclone:latest
     volumes:
-      - loanradar:/data
+      - object_vol:/mnt/object
       - ~/.config/rclone/rclone.conf:/root/.config/rclone/rclone.conf:ro
     entrypoint: /bin/sh
     command:
