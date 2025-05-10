@@ -1,4 +1,3 @@
-name: eval_full_stack
 services:
 
   # FastAPI model inference service
@@ -22,8 +21,7 @@ services:
       - "5000:5000"
     environment:
       - FASTAPI_URL=http://fastapi_server:8000/predict
-    depends_on:
-      - fastapi_server
+
     networks:
       - eval_net
     environment:
