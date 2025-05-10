@@ -23,7 +23,7 @@ services:
         cd LoanData
 
         echo "Downloading training CSV..."
-        curl -L 'https://drive.google.com/uc?export=download&id=1E8Eu3lhcVJx3Rw8X7dUdKTQicj20CKw1' -o train.csv
+        gdown --fuzzy 'https://drive.google.com/file/d/1BLKJFsTj23G7YCT0BjAOgFFHZPYOeSFN/view?usp=drive_link' -O train.csv
 
         echo "Listing contents of /data after extract stage:"
         ls -l /mnt/data/LoanData
