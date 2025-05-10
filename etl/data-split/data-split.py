@@ -117,6 +117,7 @@ if not df_list:
 
 df = pd.concat(df_list, ignore_index=True)
 log_msgs.append(f"\n✅ Combined processed shape before final NaN drop: {df.shape}")
+print(f"\n✅ Combined processed shape before final NaN drop: {df.shape}")
 print("Concat Done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 # Final drop of rows with NaNs (just in case)
 # pre_final = df.shape[0]
@@ -136,9 +137,9 @@ train_df = df.iloc[:n_train]
 val_df = df.iloc[n_train:n_train + n_val]
 eval_df = df.iloc[n_train + n_val:]
 
-train_df.to_csv(os.path.join(OUTPUT_TRAIN_DIR, "train.csv"), index=False)
-val_df.to_csv(os.path.join(OUTPUT_VAL_DIR, "val.csv"), index=False)
-eval_df.to_csv(os.path.join(OUTPUT_EVAL_DIR, "eval.csv"), index=False)
+train_df.to_csv(os.path.join(OUTPUT_TRAIN_DIR, "train.csv"), index=False, chunksize=10000)
+val_df.to_csv(os.path.join(OUTPUT_VAL_DIR, "val.csv"), index=False, chunksize=5000)
+eval_df.to_csv(os.path.join(OUTPUT_EVAL_DIR, "eval.csv"), index=False, chunksize=5000)
 
 log_msgs.append(f"\n📝 Saved splits:")
 log_msgs.append(f"Train: {len(train_df)} rows")
