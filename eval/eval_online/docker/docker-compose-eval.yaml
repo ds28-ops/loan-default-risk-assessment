@@ -9,8 +9,7 @@ services:
       - "8001:8000"
     volumes:
       - ./model.pth:/app/model.pth  # Mount your model file when it's ready
-    networks:
-      - eval_net
+
 
   # Flask front-end app
   flask:
@@ -28,8 +27,7 @@ services:
     depends_on:
       - fastapi_server
       #- minio
-    networks:
-      - eval_net
+
 
   # Prometheus monitoring
   prometheus:
@@ -39,8 +37,7 @@ services:
       - "0.0.0.0:9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    networks:
-      - eval_net
+
 
   # Grafana dashboard
   grafana:
@@ -55,8 +52,7 @@ services:
       - GF_SERVER_DOMAIN=129.114.25.120
     depends_on:
       - prometheus
-    networks:
-      - eval_net
+
 
   # Jupyter notebook for evaluation and drift detection
   # jupyter:
