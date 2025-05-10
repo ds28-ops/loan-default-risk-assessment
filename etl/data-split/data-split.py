@@ -1,4 +1,5 @@
 import os
+import csv
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -9,7 +10,7 @@ INTERMEDIATE_CSV = os.path.join(OUTPUT_DIR, "cleaned_streamed.csv")
 TRAIN_DIR = os.path.join(OUTPUT_DIR, "train")
 EVAL_DIR = os.path.join(OUTPUT_DIR, "eval")
 VAL_DIR = os.path.join(OUTPUT_DIR, "val")
-CHUNK_SIZE = 10000
+CHUNK_SIZE = 50000
 
 # Ensure output dirs exist
 os.makedirs(TRAIN_DIR, exist_ok=True)
@@ -49,14 +50,20 @@ for i, chunk in enumerate(pd.read_csv(INPUT_CSV, chunksize=CHUNK_SIZE, low_memor
     # Drop remaining rows with NaNs
     chunk.dropna(inplace=True)
 
-    # Append to intermediate CSV
-    chunk.to_csv(INTERMEDIATE_CSV, mode='a', header=not header_written, index=False)
+    # Append to intermediate CSV with safe quoting
+    chunk.to_csv(
+        INTERMEDIATE_CSV,
+        mode='a',
+        header=not header_written,
+        index=False,
+        quoting=csv.QUOTE_ALL
+    )
     header_written = True
 
 print("✅ All chunks processed. Loading cleaned data for split...")
 
-# Load full cleaned dataset
-df = pd.read_csv(INTERMEDIATE_CSV)
+# Load full cleaned dataset with error resilience
+df = pd.read_csv(INTERMEDIATE_CSV, on_bad_lines='skip', quoting=csv.QUOTE_ALL)
 
 # Stratified 80-10-10 split
 train_df, temp_df = train_test_split(df, test_size=0.2, random_state=42, stratify=df["risk_level"])
