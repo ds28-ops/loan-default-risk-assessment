@@ -80,7 +80,7 @@ services:
     volumes:
       - ~/loanradar:/home/jovyan/work
       - /mnt/object:/mnt/object
-      - /mnt/block: /mnt/block
+      - /mnt/block:/mnt/block
       # - type: bind
       #   source: /mnt/object
       #   target: /mnt/object
