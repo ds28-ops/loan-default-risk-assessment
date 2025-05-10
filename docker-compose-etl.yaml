@@ -1,7 +1,7 @@
 name: train-transform
 
-volumes:
-  /mnt/data:
+# volumes:
+#   /mnt/data:
 
 services:
   extract-data:
