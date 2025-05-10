@@ -58,7 +58,7 @@ services:
       - postgres
       - minio-create-bucket
     environment:
-      MLFLOW_TRACKING_URI: http://129.114.25.120:8000
+      MLFLOW_TRACKING_URI: http://0.0.0.0:8000
       MLFLOW_S3_ENDPOINT_URL: http://minio:9000
       AWS_ACCESS_KEY_ID: "your-access-key"
       AWS_SECRET_ACCESS_KEY: "your-secret-key"
@@ -76,7 +76,7 @@ services:
       - "8888:8888"
     shm_size: 8g
     environment:
-      - MLFLOW_TRACKING_URI=http://129.114.256.120:8000
+      - MLFLOW_TRACKING_URI=http://${HOST_IP}:8000/
     volumes:
       - ~/loanradar:/home/jovyan/work
       - /mnt/object:/mnt/object
