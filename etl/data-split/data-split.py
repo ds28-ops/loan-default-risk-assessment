@@ -26,34 +26,44 @@ def map_risk_level(status):
     else:
         return "High"
 
-# Step 1: Load and process chunks
-chunks = []
-i = 0
-for chunk in pd.read_csv(INPUT_CSV, chunksize=CHUNK_SIZE, low_memory=False):
+# Remove intermediate file if it exists
+if os.path.exists(INTERMEDIATE_CSV):
+    os.remove(INTERMEDIATE_CSV)
+
+# Step 1: Process and stream-write cleaned chunks
+header_written = False
+for i, chunk in enumerate(pd.read_csv(INPUT_CSV, chunksize=CHUNK_SIZE, low_memory=False)):
     if 'loan_status' not in chunk.columns:
         continue
-    print("chunk", i, " is done!!!")    
-    i+=1    
-    # Drop rows with missing loan_status
-    chunk = chunk.dropna(subset=['loan_status'])
 
-    # Map risk level
+    print(f"✅ Processing chunk {i}...")
+
+    # Filter valid loan_status
+    chunk = chunk[chunk['loan_status'].notna()]
     chunk['risk_level'] = chunk['loan_status'].apply(map_risk_level)
     chunk.drop(columns=['loan_status'], inplace=True)
+    chunk.dropna(inplace=True)
 
-    chunks.append(chunk)
+    # Append to intermediate CSV with safe quoting
+    chunk.to_csv(
+        INTERMEDIATE_CSV,
+        mode='a',
+        header=not header_written,
+        index=False,
+        quoting=csv.QUOTE_ALL
+    )
+    header_written = True
 
-# Step 2: Concatenate all chunks
-if not chunks:
-    raise ValueError("No valid data found in chunks.")
+print("✅ All chunks processed. Loading cleaned data for split...")
 
-df = pd.concat(chunks, ignore_index=True)
+# Step 2: Load final cleaned dataset (streamed into disk) safely
+df = pd.read_csv(INTERMEDIATE_CSV, on_bad_lines='skip', quoting=csv.QUOTE_ALL)
 
-# Stratified 80-10-10 split
+# Step 3: Stratified 80-10-10 split
 train_df, temp_df = train_test_split(df, test_size=0.2, random_state=42, stratify=df["risk_level"])
 eval_df, val_df = train_test_split(temp_df, test_size=0.5, random_state=42, stratify=temp_df["risk_level"])
 
-# Save final splits
+# Step 4: Save splits
 train_df.to_csv(os.path.join(TRAIN_DIR, "train.csv"), index=False)
 eval_df.to_csv(os.path.join(EVAL_DIR, "eval.csv"), index=False)
 val_df.to_csv(os.path.join(VAL_DIR, "val.csv"), index=False)
