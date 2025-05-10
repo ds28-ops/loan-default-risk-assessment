@@ -26,44 +26,28 @@ def map_risk_level(status):
     else:
         return "High"
 
-# Stream-clean and write to intermediate CSV
-if os.path.exists(INTERMEDIATE_CSV):
-    os.remove(INTERMEDIATE_CSV)
-
-header_written = False
-for i, chunk in enumerate(pd.read_csv(INPUT_CSV, chunksize=CHUNK_SIZE, low_memory=False)):
+# Step 1: Load and process chunks
+chunks = []
+i = 0
+for chunk in pd.read_csv(INPUT_CSV, chunksize=CHUNK_SIZE, low_memory=False):
     if 'loan_status' not in chunk.columns:
         continue
+    print("chunk", i, " is done!!!")    
+    i+=1    
+    # Drop rows with missing loan_status
+    chunk = chunk.dropna(subset=['loan_status'])
 
-    print(f"✅ Processing chunk {i}...")
-
-    # Filter and map
-    chunk = chunk[chunk['loan_status'].notna()]
+    # Map risk level
     chunk['risk_level'] = chunk['loan_status'].apply(map_risk_level)
     chunk.drop(columns=['loan_status'], inplace=True)
 
-    # Drop columns with >40% missing in this chunk
-    threshold = len(chunk) * 0.4
-    to_drop = chunk.columns[chunk.isnull().sum() > threshold]
-    chunk.drop(columns=to_drop, inplace=True)
+    chunks.append(chunk)
 
-    # Drop remaining rows with NaNs
-    chunk.dropna(inplace=True)
+# Step 2: Concatenate all chunks
+if not chunks:
+    raise ValueError("No valid data found in chunks.")
 
-    # Append to intermediate CSV with safe quoting
-    chunk.to_csv(
-        INTERMEDIATE_CSV,
-        mode='a',
-        header=not header_written,
-        index=False,
-        quoting=csv.QUOTE_ALL
-    )
-    header_written = True
-
-print("✅ All chunks processed. Loading cleaned data for split...")
-
-# Load full cleaned dataset with error resilience
-df = pd.read_csv(INTERMEDIATE_CSV, on_bad_lines='skip', quoting=csv.QUOTE_ALL)
+df = pd.concat(chunks, ignore_index=True)
 
 # Stratified 80-10-10 split
 train_df, temp_df = train_test_split(df, test_size=0.2, random_state=42, stratify=df["risk_level"])
