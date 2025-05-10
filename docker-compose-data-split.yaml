@@ -41,9 +41,3 @@ services:
       done &&
       echo '✅ Split data is ready in /mnt/object/loan-default-data. Ready for next pipeline step.'
       "
-
-volumes:
-  data_vol:
-    external: true
-  object_vol:
-    external: true
