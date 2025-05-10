@@ -2,8 +2,8 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY data-select.py .
+COPY data-split.py .
 
 RUN pip install pandas scikit-learn pyarrow
 
-CMD ["python", "data-select.py"]
+CMD ["python", "data-split.py"]
