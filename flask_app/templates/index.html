@@ -1,17 +1,93 @@
 <!DOCTYPE html>
 <html>
-<head><title>Loan Risk Predictor</title></head>
+<head>
+    <title>Loan Default Risk Assessment</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
 <body>
-  <h1>Enter Loan Application Info</h1>
-  <form method="POST">
-    <label>Loan Amount:</label><input name="loan_amnt"><br>
-    <label>Term:</label><input name="term"><br>
-    <label>Annual Income:</label><input name="annual_inc"><br>
-    <!-- Add other fields here -->
-    <button type="submit">Submit</button>
-  </form>
-  {% if prediction %}
-    <h2>Predicted Risk: {{ prediction.risk_level }}</h2>
-  {% endif %}
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Loan Default Risk Assessment</h1>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <form id="loan-form">
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="annual_income">Annual Income ($)</label>
+                            <input type="number" class="form-control" id="annual_income" name="annual_income" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="loan_amount">Loan Amount ($)</label>
+                            <input type="number" class="form-control" id="loan_amount" name="loan_amount" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="loan_term">Loan Term (months)</label>
+                            <input type="number" class="form-control" id="loan_term" name="loan_term" required>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="interest_rate">Interest Rate (%)</label>
+                            <input type="number" step="0.01" class="form-control" id="interest_rate" name="interest_rate" required>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="employment_years">Years of Employment</label>
+                            <input type="number" step="0.1" class="form-control" id="employment_years" name="employment_years" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="home_ownership">Home Ownership</label>
+                            <select class="form-control" id="home_ownership" name="home_ownership" required>
+                                <option value="">Select...</option>
+                                <option value="own">Own</option>
+                                <option value="mortgage">Mortgage</option>
+                                <option value="rent">Rent</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="loan_purpose">Loan Purpose</label>
+                            <select class="form-control" id="loan_purpose" name="loan_purpose" required>
+                                <option value="">Select...</option>
+                                <option value="debt_consolidation">Debt Consolidation</option>
+                                <option value="credit_card">Credit Card</option>
+                                <option value="home_improvement">Home Improvement</option>
+                                <option value="major_purchase">Major Purchase</option>
+                                <option value="small_business">Small Business</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block">Assess Risk</button>
+                </form>
+            </div>
+        </div>
+        
+        <div id="result-container" class="card d-none">
+            <div class="card-header">
+                <h5>Risk Assessment Result</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h3>Risk Category: <span id="risk-category" class="badge"></span></h3>
+                        <p>Default Probability: <span id="probability"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Key Factors:</h5>
+                        <ul id="explanation-list"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>
