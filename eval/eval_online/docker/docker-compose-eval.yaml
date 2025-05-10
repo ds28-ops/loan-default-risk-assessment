@@ -8,8 +8,8 @@ services:
     container_name: fastapi_server
     ports:
       - "8000:8000"
-    depends_on:
-      - minio
+    # depends_on:
+    #   - minio
 
   # Flask front-end app
   flask:
