@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 
 RAW_PATH = "/mnt/data/raw/accepted_2007_to_2018Q4.csv"
-OUTPUT_BASE = "/mnt/object/loan-default-data-test"
+OUTPUT_BASE = "/mnt/object/loan-default-data"
 CHUNK_SIZE = 50000
 
 OUTPUT_TRAIN_DIR = os.path.join(OUTPUT_BASE, "train")
@@ -46,7 +46,6 @@ log_msgs = []
 df_list = []
 
 for i, chunk in enumerate(pd.read_csv(RAW_PATH, chunksize=CHUNK_SIZE, low_memory=False)):
-    print("Processing chunk ", i)
     log_msgs.append(f"\n🔹 Processing chunk {i+1} - original shape: {chunk.shape}")
     orig_cols = chunk.columns.tolist()
 
@@ -103,6 +102,13 @@ for i, chunk in enumerate(pd.read_csv(RAW_PATH, chunksize=CHUNK_SIZE, low_memory
             chunk = pd.concat([chunk.drop(columns=[col]), dummies], axis=1)
             log_msgs.append(f"One-hot encoded: {col}")
 
+    # Drop any remaining rows with NaNs
+    pre_drop_shape = chunk.shape
+    chunk.dropna(inplace=True)
+    dropped = pre_drop_shape[0] - chunk.shape[0]
+    if dropped > 0:
+        log_msgs.append(f"Dropped rows with remaining NaNs: {dropped}")
+
     df_list.append(chunk)
 
 # Combine all chunks
@@ -110,7 +116,12 @@ if not df_list:
     raise ValueError("No valid chunks processed.")
 
 df = pd.concat(df_list, ignore_index=True)
-log_msgs.append(f"\n✅ Combined processed shape: {df.shape}")
+log_msgs.append(f"\n✅ Combined processed shape before final NaN drop: {df.shape}")
+
+# Final drop of rows with NaNs (just in case)
+pre_final = df.shape[0]
+df.dropna(inplace=True)
+log_msgs.append(f"Final NaN row drop after merge: {pre_final - df.shape[0]} rows")
 
 # Shuffle before split
 df = df.sample(frac=1.0, random_state=42).reset_index(drop=True)
