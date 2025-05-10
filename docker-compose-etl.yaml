@@ -1,8 +1,7 @@
 name: train-transform
 
 volumes:
-  data_vol:
-  object_vol:
+  data_vol:/mnt/data
 
 services:
   extract-data:
@@ -128,14 +127,14 @@ services:
                 '
 
                 echo "Listing contents of /data/LoanData after transform stage:"
-                ls -lh /data/LoanData/train_transformed.csv
+                ls -lh /data/LoanData
 
 
   load-data:
     container_name: etl_load_data
     image: rclone/rclone:latest
     volumes:
-      - object_vol:/mnt/object
+      - data_vol:/mnt/object
       - ~/.config/rclone/rclone.conf:/root/.config/rclone/rclone.conf:ro
     entrypoint: /bin/sh
     command:
