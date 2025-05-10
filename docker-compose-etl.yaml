@@ -1,77 +1,167 @@
-version: "3.8"
+name: train-transform
 
 volumes:
-  data_vol:
-  object_vol:
+  loanradar:
 
 services:
-  extract:
+  extract-data:
     container_name: etl_extract_data
     image: python:3.11
     user: root
     volumes:
-      - data_vol:/mnt/data
-    working_dir: /mnt/data
+      - loanradar:/data
+    working_dir: /data
     command:
       - bash
       - -c
       - |
         set -e
-        apt update && apt install -y unzip python3-pip
-        pip install gdown
 
-        echo "Resetting raw/ folder..."
-        rm -rf /mnt/data/raw
-        mkdir -p /mnt/data/raw
-        cd /mnt/data/raw
+        echo "Resetting dataset directory..."
+        rm -rf LoanData
+        mkdir -p LoanData
+        cd LoanData
 
-        echo "Downloading dataset zip from Google Drive..."
-        gdown --fuzzy 'https://drive.google.com/file/d/12RwwHXdXDp2a0D-NoBxmnXlRLrSI7-wI/view?usp=sharing' -O accepted_2007_to_2018Q4.csv.gz
+        echo "Downloading training CSV..."
+        curl -L 'https://drive.google.com/uc?export=download&id=1E8Eu3lhcVJx3Rw8X7dUdKTQicj20CKw1' -o train.csv
 
-        echo "Unzipping..."
-        gunzip -f accepted_2007_to_2018Q4.csv.gz
+        echo "Listing contents of /data after extract stage:"
+        ls -l /data
 
-        echo "Contents of raw/ directory:"
-        ls -lh /mnt/data/raw
-
-  transform:
-    build:
-      context: ./etl
-    image: loan-etl
-    container_name: loan_etl_container
-    depends_on:
-      - extract
-    working_dir: /app
+  transform-data:
+    container_name: etl_transform_data
+    image: python:3.11
+    user: root
     volumes:
-      - data_vol:/mnt/data
-      - object_vol:/mnt/object
-    command: >
-      sh -c '
-      echo "Waiting for raw data file to be ready..." &&
-      until [ -f /mnt/data/raw/accepted_2007_to_2018Q4.csv ]; do
-        echo "File not yet available, waiting 5 seconds..." &&
-        sleep 5
-      done &&
-      echo "Raw data file is ready, starting transformation..." &&
-      python transform_data_old.py
-      '
+      - loanradar:/data
+    working_dir: /data/LoanData
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+        pip install pandas scikit-learn
 
-  rclone_upload:
+        python3 -c '
+        import pandas as pd
+        import numpy as np
+        import os
+        from sklearn.preprocessing import StandardScaler, LabelEncoder
+        from datetime import datetime
+
+        DROP_COLS = [
+            "id", "url", "emp_title", "title", "zip_code", "issue_d", "pymnt_plan",
+            "out_prncp", "out_prncp_inv", "total_pymnt", "total_pymnt_inv",
+            "total_rec_prncp", "total_rec_int", "total_rec_late_fee", "recoveries",
+            "collection_recovery_fee", "last_pymnt_d", "last_pymnt_amnt",
+            "last_credit_pull_d", "last_fico_range_high", "last_fico_range_low",
+            "policy_code", "hardship_flag", "disbursement_method", "debt_settlement_flag"
+        ]
+
+        CATEGORICAL_ONEHOT = [
+            "term", "home_ownership", "verification_status",
+            "purpose", "application_type", "initial_list_status", "grade"
+        ]
+
+        CATEGORICAL_LABEL = ["sub_grade", "emp_length", "addr_state"]
+        LABEL_COL = "risk_level"
+
+        def convert_earliest_cr_line(df):
+            ref_date = datetime(2020, 1, 1)
+            def months_since(x):
+                try:
+                    return (ref_date - datetime.strptime(x.strip(), "%b-%y")).days // 30
+                except:
+                    return np.nan
+            df["credit_age_months"] = df["earliest_cr_line"].apply(months_since)
+            return df
+
+        def main(input_csv, output_csv):
+            df = pd.read_csv(input_csv, low_memory=False)
+            log_msgs = []
+
+            if LABEL_COL in df.columns:
+                label_series = df[LABEL_COL]
+                df.drop(columns=[LABEL_COL], inplace=True)
+                log_msgs.append(f"Preserved label column '{LABEL_COL}' separately.")
+            else:
+                label_series = None
+
+            drop_actual = [col for col in DROP_COLS if col in df.columns]
+            df.drop(columns=drop_actual, inplace=True)
+            log_msgs.append(f"Dropped columns: {drop_actual}")
+
+            df = convert_earliest_cr_line(df)
+            df.drop(columns=["earliest_cr_line"], inplace=True)
+
+            for col in df.columns:
+                if df[col].isnull().sum() > 0:
+                    if df[col].dtype == object:
+                        mode = df[col].mode()
+                        df[col] = df[col].fillna(mode[0] if not mode.empty else "Unknown")
+                        log_msgs.append(f"Filled NaNs in {col} with mode/Unknown")
+                    else:
+                        df[col] = df[col].fillna(df[col].median())
+                        log_msgs.append(f"Filled NaNs in {col} with median")
+
+            for col in CATEGORICAL_ONEHOT:
+                if col in df.columns:
+                    dummies = pd.get_dummies(df[col], prefix=col)
+                    df = pd.concat([df.drop(columns=[col]), dummies], axis=1)
+                    log_msgs.append(f"One-hot encoded: {col}")
+
+            for col in CATEGORICAL_LABEL:
+                if col in df.columns:
+                    le = LabelEncoder()
+                    df[col] = le.fit_transform(df[col].astype(str))
+                    log_msgs.append(f"Label-encoded: {col}")
+
+            numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+            scaler = StandardScaler()
+            df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
+            log_msgs.append(f"Standard-scaled columns: {numeric_cols}")
+
+            if label_series is not None:
+                df[LABEL_COL] = label_series.reset_index(drop=True)
+                log_msgs.append(f"Re-attached label column '{LABEL_COL}'.")
+
+            df.to_csv(output_csv, index=False)
+
+            with open(os.path.join(os.path.dirname(output_csv), "etl_log.txt"), "w") as f:
+                for line in log_msgs:
+                    f.write(line + "\\n")
+
+            print("✅ Transformation complete.")
+
+        main("train.csv", "train_transformed.csv")
+                '
+
+                echo "Listing contents of /data/LoanData after transform stage:"
+                ls -l /data/LoanData
+
+  load-data:
+    container_name: etl_load_data
     image: rclone/rclone:latest
-    container_name: rclone_upload_container
-    depends_on:
-      - transform
-    environment:
-      - RCLONE_CONFIG=/config/rclone/rclone.conf
     volumes:
-      - object_vol:/mnt/object
-      - ~/.config/rclone:/config/rclone:ro
-    entrypoint: >
-      sh -c "
-      echo 'Waiting for cleaned_data.csv...' &&
-      until [ -f /mnt/object/loan-default-data/cleaned_data.csv ]; do
-        echo 'Cleaned data not ready, waiting 5 seconds...' &&
-        sleep 5
-      done &&
-      echo '✅ Cleaned and split data is ready in /mnt/object/loan-default-data (no copy needed).'
-      "
+      - loanradar:/data
+      - ~/.config/rclone/rclone.conf:/root/.config/rclone/rclone.conf:ro
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        if [ -z "$RCLONE_CONTAINER" ]; then
+          echo "ERROR: RCLONE_CONTAINER is not set"
+          exit 1
+        fi
+        echo "Cleaning up existing contents of container..."
+        rclone delete chi_tacc:$RCLONE_CONTAINER --rmdirs || true
+
+        rclone copy /data/LoanData chi_tacc:$RCLONE_CONTAINER \
+        --progress \
+        --transfers=32 \
+        --checkers=16 \
+        --multi-thread-streams=4 \
+        --fast-list
+
+        echo "Listing directories in container after load stage:"
+        rclone lsd chi_tacc:$RCLONE_CONTAINER

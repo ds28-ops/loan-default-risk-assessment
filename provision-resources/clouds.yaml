@@ -25,3 +25,43 @@ clouds:
     identity_api_version: 3
     auth_type: "v3applicationcredential"
     
+
+# clouds:
+#   openstack:
+    
+#     auth:
+      
+#       auth_url: https://chi.uc.chameleoncloud.org:5000
+      
+#       application_credential_id: "a3ac40fa8c0e4ce09778ab3132592b78"
+#       application_credential_secret: "2kLZFNwunKtgYAYFLzuyyxWT9OM5Ahxrigc3WoLTDKo-XGdTRsqHl2rqX15-fH4c4___z8Djg4efproEUYi_pA"
+    
+      
+        
+#     region_name: "CHI@UC"
+        
+      
+#     interface: "public"
+#     identity_api_version: 3
+#     auth_type: "v3applicationcredential"
+    
+
+# clouds:
+#   openstack:
+    
+#     auth:
+      
+#       auth_url: https://kvm.tacc.chameleoncloud.org:5000
+      
+#       application_credential_id: "7a49299eed714489907d3c149ff50e03"
+#       application_credential_secret: "wEt0cAwfsdu78cco6Ume2YW9lcEwCq980BuGzYHEaGTWcj5w8j9mnc192zPb81I3lhEkT87zGB1aIl_ZeIUhzg"
+    
+      
+        
+#     region_name: "KVM@TACC"
+        
+      
+#     interface: "public"
+#     identity_api_version: 3
+#     auth_type: "v3applicationcredential"
+    
