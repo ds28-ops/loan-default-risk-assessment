@@ -125,7 +125,7 @@ print("Concat Done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 # log_msgs.append(f"Final NaN row drop after merge: {pre_final - df.shape[0]} rows")
 
 # Shuffle before split
-df = df.sample(frac=1.0, random_state=42).reset_index(drop=True)
+# df = df.sample(frac=1.0, random_state=42).reset_index(drop=True)
 
 # Split 80/10/10
 n_total = len(df)
