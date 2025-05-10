@@ -79,5 +79,11 @@ services:
       - MLFLOW_TRACKING_URI=http://${HOST_IP}:8000
     volumes:
       - ~/loanradar:/home/kvm
+      - type: bind
+        source: /mnt/object
+        target: /mnt/object
+      - type: bind
+        source: /mnt/data
+        target: /mnt/data
     command: >
       bash -c "pip install mlflow && start-notebook.sh"
