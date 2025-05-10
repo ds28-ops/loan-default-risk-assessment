@@ -80,19 +80,16 @@ services:
             df = pd.read_csv(input_csv, low_memory=False)
             log_msgs = []
 
-            if LABEL_COL in df.columns:
-                label_series = df[LABEL_COL]
-                df.drop(columns=[LABEL_COL], inplace=True)
-                log_msgs.append(f"Preserved label column '{LABEL_COL}' separately.")
-            else:
-                label_series = None
+            # Drop and preserve label
+            label_series = df.pop(LABEL_COL) if LABEL_COL in df.columns else None
 
             drop_actual = [col for col in DROP_COLS if col in df.columns]
             df.drop(columns=drop_actual, inplace=True)
             log_msgs.append(f"Dropped columns: {drop_actual}")
 
-            df = convert_earliest_cr_line(df)
-            df.drop(columns=["earliest_cr_line"], inplace=True)
+            if "earliest_cr_line" in df.columns:
+                df = convert_earliest_cr_line(df)
+                df.drop(columns=["earliest_cr_line"], inplace=True)
 
             for col in df.columns:
                 if df[col].isnull().sum() > 0:
@@ -126,18 +123,17 @@ services:
                 log_msgs.append(f"Re-attached label column '{LABEL_COL}'.")
 
             df.to_csv(output_csv, index=False)
-
             with open(os.path.join(os.path.dirname(output_csv), "etl_log.txt"), "w") as f:
                 for line in log_msgs:
                     f.write(line + "\\n")
-
             print("✅ Transformation complete.")
 
         main("train.csv", "train_transformed.csv")
                 '
 
                 echo "Listing contents of /data/LoanData after transform stage:"
-                ls -l /data/LoanData
+                ls -lh /data/LoanData/train_transformed.csv
+
 
   load-data:
     container_name: etl_load_data
