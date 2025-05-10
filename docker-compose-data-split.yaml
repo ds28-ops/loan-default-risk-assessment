@@ -8,8 +8,6 @@ services:
     image: loan-etl
     container_name: loan_etl_container
     working_dir: /app
-    depends_on:
-      - minio # if you later push to object storage
     volumes:
       - data_vol:/mnt/data # raw input data (mounted from host)
       - object_vol:/mnt/object # processed output
