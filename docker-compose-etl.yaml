@@ -1,7 +1,7 @@
 name: train-transform
 
 volumes:
-  data_vol:/mnt/data
+  /mnt/data:
 
 services:
   extract-data:
@@ -9,7 +9,7 @@ services:
     image: python:3.11
     user: root
     volumes:
-      - data_vol:/mnt/data
+      - /mnt/data:/mnt/data
     working_dir: /mnt/data
     command:
       - bash
@@ -33,7 +33,7 @@ services:
     image: python:3.11
     user: root
     volumes:
-      - data_vol:/mnt/data
+      - /mnt/data:/mnt/data
     working_dir: /mnt/data/LoanData
     command:
       - bash
