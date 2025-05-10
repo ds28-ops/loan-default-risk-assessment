@@ -1,12 +1,11 @@
 import pandas as pd
 import os
 
-RAW_PATH = "/mnt/data/raw/accepted_2007_to_2018Q4.csv"
+RAW_PATH = "/mnt/data/raw/loan_data.parquet"
 OUTPUT_BASE = "/mnt/object/loan-default-data-test"
-OUTPUT_TRAIN = os.path.join(OUTPUT_BASE, "train", "train_clean.csv")
-OUTPUT_VAL = os.path.join(OUTPUT_BASE, "val", "val_clean.csv")
-OUTPUT_EVAL = os.path.join(OUTPUT_BASE, "eval", "eval_clean.csv")
-CHUNK_SIZE = 10000
+OUTPUT_TRAIN = os.path.join(OUTPUT_BASE, "train", "train_clean.parquet")
+OUTPUT_VAL = os.path.join(OUTPUT_BASE, "val", "val_clean.parquet")
+OUTPUT_EVAL = os.path.join(OUTPUT_BASE, "eval", "eval_clean.parquet")
 
 # Create output directories
 os.makedirs(os.path.join(OUTPUT_BASE, "train"), exist_ok=True)
@@ -21,21 +20,17 @@ def map_risk_level(status):
     else:
         return "High"
 
-df_list = []
+# Load full Parquet dataset
+df = pd.read_parquet(RAW_PATH)
 
-# Read and process chunks
-for chunk in pd.read_csv(RAW_PATH, chunksize=CHUNK_SIZE, low_memory=False):
-    if 'loan_status' not in chunk.columns:
-        continue
-    chunk = chunk.dropna(subset=['loan_status'])
-    chunk['risk_level'] = chunk['loan_status'].apply(map_risk_level)
-    chunk.drop(columns=['loan_status'], inplace=True)
-    df_list.append(chunk)
+# Drop rows without loan_status
+df = df.dropna(subset=['loan_status'])
 
-# Combine all chunks
-if not df_list:
-    raise ValueError("No valid data found.")
-df = pd.concat(df_list, ignore_index=True)
+# Map to risk_level
+df['risk_level'] = df['loan_status'].apply(map_risk_level)
+
+# Drop original target
+df.drop(columns=['loan_status'], inplace=True)
 
 # Drop columns with >40% missing
 threshold = len(df) * 0.4
@@ -48,8 +43,9 @@ df = df.sample(frac=1.0, random_state=42).reset_index(drop=True)
 train_end = int(0.8 * len(df))
 val_end = int(0.9 * len(df))
 
-df.iloc[:train_end].to_csv(OUTPUT_TRAIN, index=False)
-df.iloc[train_end:val_end].to_csv(OUTPUT_VAL, index=False)
-df.iloc[val_end:].to_csv(OUTPUT_EVAL, index=False)
+# Save as Parquet
+df.iloc[:train_end].to_parquet(OUTPUT_TRAIN, index=False)
+df.iloc[train_end:val_end].to_parquet(OUTPUT_VAL, index=False)
+df.iloc[val_end:].to_parquet(OUTPUT_EVAL, index=False)
 
 print("Minimal ETL complete.")
