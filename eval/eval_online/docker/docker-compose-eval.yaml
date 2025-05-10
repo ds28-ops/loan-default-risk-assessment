@@ -108,91 +108,89 @@ services:
       bash -c "pip install mlflow && start-notebook.sh"
 
   # Airflow for feedback loop orchestration
-  airflow-webserver:
-    image: apache/airflow:2.9.3-python3.11
-    container_name: airflow-webserver
-    ports:
-      - "8081:8080"
-    entrypoint: /bin/bash
-    command: -c "exec airflow webserver"
-    environment:
-      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__FERNET_KEY=your-fernet-key
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://user:password@postgres/postgres
-      - AIRFLOW__CORE__LOAD_EXAMPLES=False
-      - LABEL_STUDIO_URL=http://label-studio:8080
-      - LABEL_STUDIO_USER_TOKEN=your-label-token
-      - MINIO_URL=http://minio:9000
-      - MINIO_USER=your-access-key
-      - MINIO_PASSWORD=your-secret-key
-    depends_on:
-      airflow-setup:
-        condition: service_completed_successfully
-    volumes:
-      - /home/cc/eval-chi/dags:/opt/airflow/dags
-      - airflow_shared:/opt/airflow
-    networks:
-      - eval_net
+#   airflow-webserver:
+#     image: apache/airflow:2.9.3-python3.11
+#     container_name: airflow-webserver
+#     ports:
+#       - "8081:8080"
+#     entrypoint: /bin/bash
+#     command: -c "exec airflow webserver"
+#     environment:
+#       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+#       - AIRFLOW__CORE__FERNET_KEY=your-fernet-key
+#       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://user:password@postgres/postgres
+#       - AIRFLOW__CORE__LOAD_EXAMPLES=False
+#       - MINIO_URL=http://minio:9000
+#       - MINIO_USER=your-access-key
+#       - MINIO_PASSWORD=your-secret-key
+#     depends_on:
+#       airflow-setup:
+#         condition: service_completed_successfully
+#     volumes:
+#       - /home/cc/eval-chi/dags:/opt/airflow/dags
+#       - airflow_shared:/opt/airflow
+#     networks:
+#       - eval_net
 
-  airflow-scheduler:
-    image: apache/airflow:2.9.3-python3.11
-    container_name: airflow-scheduler
-    entrypoint: /bin/bash
-    command: -c "exec airflow scheduler"
-    environment:
-      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__FERNET_KEY=your-fernet-key
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://user:password@postgres/postgres
-      - AIRFLOW__CORE__LOAD_EXAMPLES=False
-      - LABEL_STUDIO_URL=http://label-studio:8080
-      - LABEL_STUDIO_USER_TOKEN=your-label-token
-      - MINIO_URL=http://minio:9000
-      - MINIO_USER=your-access-key
-      - MINIO_PASSWORD=your-secret-key
-    depends_on:
-      airflow-setup:
-        condition: service_completed_successfully
-    volumes:
-      - /home/cc/eval-chi/dags:/opt/airflow/dags
-      - airflow_shared:/opt/airflow
-    networks:
-      - eval_net
+#   airflow-scheduler:
+#     image: apache/airflow:2.9.3-python3.11
+#     container_name: airflow-scheduler
+#     entrypoint: /bin/bash
+#     command: -c "exec airflow scheduler"
+#     environment:
+#       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+#       - AIRFLOW__CORE__FERNET_KEY=your-fernet-key
+#       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://user:password@postgres/postgres
+#       - AIRFLOW__CORE__LOAD_EXAMPLES=False
+#       - LABEL_STUDIO_URL=http://label-studio:8080
+#       - LABEL_STUDIO_USER_TOKEN=your-label-token
+#       - MINIO_URL=http://minio:9000
+#       - MINIO_USER=your-access-key
+#       - MINIO_PASSWORD=your-secret-key
+#     depends_on:
+#       airflow-setup:
+#         condition: service_completed_successfully
+#     volumes:
+#       - /home/cc/eval-chi/dags:/opt/airflow/dags
+#       - airflow_shared:/opt/airflow
+#     networks:
+#       - eval_net
 
-  airflow-setup:
-    image: apache/airflow:2.9.3-python3.11
-    container_name: airflow-setup
-    entrypoint: /bin/bash
-    command: -c "airflow db migrate && airflow users create --username admin --firstname Airflow --lastname Admin --role Admin --email airflow@example.com --password airflow"
-    environment:
-      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__FERNET_KEY=your-fernet-key
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://user:password@postgres/postgres
-      - AIRFLOW__CORE__LOAD_EXAMPLES=False
-    volumes:
-      - /home/cc/eval-chi/dags:/opt/airflow/dags
-      - airflow_shared:/opt/airflow
-    networks:
-      - eval_net
+#   airflow-setup:
+#     image: apache/airflow:2.9.3-python3.11
+#     container_name: airflow-setup
+#     entrypoint: /bin/bash
+#     command: -c "airflow db migrate && airflow users create --username admin --firstname Airflow --lastname Admin --role Admin --email airflow@example.com --password airflow"
+#     environment:
+#       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+#       - AIRFLOW__CORE__FERNET_KEY=your-fernet-key
+#       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://user:password@postgres/postgres
+#       - AIRFLOW__CORE__LOAD_EXAMPLES=False
+#     volumes:
+#       - /home/cc/eval-chi/dags:/opt/airflow/dags
+#       - airflow_shared:/opt/airflow
+#     networks:
+#       - eval_net
 
-  # Postgres DB for Airflow
-  postgres:
-    image: postgres:latest
-    container_name: postgres
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - eval_net
+#   # Postgres DB for Airflow
+#   postgres:
+#     image: postgres:latest
+#     container_name: postgres
+#     environment:
+#       POSTGRES_USER: user
+#       POSTGRES_PASSWORD: password
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+#     networks:
+#       - eval_net
 
-volumes:
-  minio_data:
-  food11:
-    external: true
-  airflow_shared:
-  postgres_data:
+# volumes:
+#   minio_data:
+#   food11:
+#     external: true
+#   airflow_shared:
+#   postgres_data:
 
-networks:
-  eval_net:
-    driver: bridge
+# networks:
+#   eval_net:
+#     driver: bridge
