@@ -79,7 +79,8 @@ services:
       - MLFLOW_TRACKING_URI=http://129.114.256.120:8000
     volumes:
       - ~/loanradar:/home/jovyan/work
-      - /mnt/object:/mnt
+      - /mnt/object:/mnt/object
+      - /mnt/block: /mnt/block
       # - type: bind
       #   source: /mnt/object
       #   target: /mnt/object
