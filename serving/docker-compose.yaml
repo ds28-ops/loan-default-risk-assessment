@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter-onnx-cpu
+    container_name: jupyter-serving
+    ports:
+      - "8888:8888"
+    volumes:
+      - /mnt/block/models:/mnt/models
+      - /mnt/object/loan-default-data:/mnt/data
+      - ./workspace:/home/jovyan/work
+    environment:
+      - MODEL_PATH=/mnt/models/model.onnx
+      - DATA_PATH=/mnt/data
+    command: >
+      start-notebook.sh --NotebookApp.token=''
