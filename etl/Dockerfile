@@ -7,4 +7,4 @@ COPY transform_data.py .
 
 RUN pip install pandas numpy scikit-learn
 
-CMD ["python", "transform_data.py"]
+CMD ["python", "transform_data_old.py"]
