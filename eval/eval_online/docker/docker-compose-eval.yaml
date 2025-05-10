@@ -14,7 +14,7 @@ services:
   # Flask front-end app
   flask:
     build:
-      context: ../flask_app
+      context: ../../../flask_app
       dockerfile: Dockerfile
     container_name: flask
     ports:
