@@ -36,7 +36,7 @@ services:
 
   transform:
     build:
-      context: ./etl
+      context: ./etl/data-split
     image: loan-etl
     container_name: loan_etl_container
     depends_on:
@@ -53,7 +53,7 @@ services:
         sleep 5
       done &&
       echo "Raw data file is ready, starting transformation..." &&
-      python transform_data.py
+      python data-split.py
       '
 
   rclone_upload:
