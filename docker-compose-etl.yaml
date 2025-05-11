@@ -41,7 +41,7 @@ services:
       - -c
       - |
         set -e
-        pip install pandas scikit-learn
+        pip install pandas scikit-learn joblib tqdm
 
         python3 -c '
         # import pandas as pd
@@ -136,6 +136,8 @@ services:
         import os
         import joblib
         from sklearn.preprocessing import StandardScaler, LabelEncoder
+        from tqdm import tqdm
+        tqdm.pandas()
 
         LABEL_COL = "risk_level"
 
@@ -162,27 +164,26 @@ services:
         CATEGORICAL_ONEHOT = ["home_ownership", "verification_status"]
         CATEGORICAL_LABEL = ["sub_grade"]
 
-        # Read raw training data
         df = pd.read_csv("/mnt/data/LoanData/train.csv", low_memory=False)
         log_msgs = []
 
-        # Check for column existence
         missing_cols = [col for col in KEEP_COLS if col not in df.columns]
         if missing_cols:
             raise ValueError(f"Missing expected columns: {missing_cols}")
         df = df[KEEP_COLS]
 
-        # Separate label
-        label_series = df.pop(LABEL_COL)
+        # Binary label mapping: Low -> 0, Medium/High -> 1
+        label_series = df.pop(LABEL_COL).map(lambda x: 0 if x == "Low" else 1)
+        print("Label distribution:", label_series.value_counts().to_dict())
+        log_msgs.append("Label distribution: " + str(label_series.value_counts().to_dict()))
+        log_msgs.append("Mapped risk_level: Low -> 0, Medium/High -> 1")
 
-        # Store stats
         median_values = {}
         mode_values = {}
         label_encoders = {}
         onehot_columns = []
 
-        # Handle NaNs
-        for col in df.columns:
+        for col in tqdm(df.columns, desc="Handling NaNs"):
             if df[col].isnull().sum() > 0:
                 if df[col].dtype == object:
                     mode = df[col].mode()
@@ -196,33 +197,28 @@ services:
                     median_values[col] = median_val
                     log_msgs.append(f"Filled NaNs in {col} with median: {median_val}")
 
-        # One-hot encoding
-        for col in CATEGORICAL_ONEHOT:
+        for col in tqdm(CATEGORICAL_ONEHOT, desc="One-hot encoding"):
             dummies = pd.get_dummies(df[col], prefix=col)
             onehot_columns.extend(dummies.columns.tolist())
             df = pd.concat([df.drop(columns=[col]), dummies], axis=1)
             log_msgs.append(f"One-hot encoded: {col} -> {dummies.columns.tolist()}")
 
-        # Label encoding
-        for col in CATEGORICAL_LABEL:
+        for col in tqdm(CATEGORICAL_LABEL, desc="Label encoding"):
             le = LabelEncoder()
             df[col] = le.fit_transform(df[col].astype(str))
             label_encoders[col] = le
             log_msgs.append(f"Label-encoded: {col}")
-        # Standard scaling
+
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
         scaler = StandardScaler()
         df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
         log_msgs.append(f"Standard-scaled columns: {numeric_cols}")
 
-        # Reattach label
         df[LABEL_COL] = label_series.reset_index(drop=True)
-        log_msgs.append("Re-attached label column.")
+        log_msgs.append("Re-attached binary-mapped label column.")
 
-        # Save transformed data
         df.to_csv("train_transformed_1.csv", index=False)
 
-        # Save transformation artifacts
         artifacts = {
             "median_values": median_values,
             "mode_values": mode_values,
@@ -236,7 +232,6 @@ services:
         }
         joblib.dump(artifacts, "transform_artifacts.pkl")
 
-        # Save logs
         with open("etl_log_1.txt", "w") as f:
             for line in log_msgs:
                 f.write(line + "\n")
