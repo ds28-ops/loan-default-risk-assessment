@@ -1,7 +1,8 @@
 {
-    "pip": "requirements.txt",
-    "env_vars": {
-      "MLFLOW_TRACKING_URI": "http://129.114.25.120:8000"
-    }
+  "pip": "requirements.txt",
+  "env_vars": {
+    "MLFLOW_TRACKING_URI": "http://129.114.25.120:8000",
+    "DATA_PATH": "/mnt/object/"
   }
-  
+}
+

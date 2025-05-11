@@ -4,11 +4,11 @@ import numpy as np
 import mlflow
 import mlflow.xgboost
 import xgboost as xgb
-
-from ray.train.xgboost import XGBoostTrainer
+import ray
+from ray.train.xgboost import XGBoostTrainer, RayTrainReportCallback
 from ray.train import ScalingConfig, RunConfig
 
-# -------------------- Config --------------------
+# Config
 CONFIG = {
     "n_estimators": 100,
     "learning_rate": 0.1,
@@ -19,19 +19,21 @@ CONFIG = {
     "eval_metric": "mlogloss",
     "experiment_name": "loan-risk-xgboost",
     "run_name": "xgb-ray-run",
-    "dataset_path": "/mnt/object/LoanData/train_transformed.csv",
+    "dataset_path": "/mnt/object/train_transformed.csv",
     "label_col": "risk_level"
 }
+data_path = os.getenv("DATA_PATH")
+# Load dataset as Ray Data
+df = pd.read_csv(os.path.join(data_path, "train_transformed.csv"))
+df[CONFIG["label_col"]] = df[CONFIG["label_col"]].map({"Low": 0, "Medium": 1, "High": 2})
+ds = ray.data.from_pandas(df)
 
-# -------------------- Training Function --------------------
+# Training function
 def train_func(config):
-    df = pd.read_csv(config["dataset_path"])
-    df[config["label_col"]] = df[config["label_col"]].map({"Low": 0, "Medium": 1, "High": 2})
-    
-    X = df.drop(columns=[config["label_col"]])
-    y = df[config["label_col"]]
-
-    dtrain = xgb.DMatrix(X, label=y)
+    import mlflow
+    import mlflow.xgboost
+    import xgboost as xgb
+    from ray.train import get_dataset_shard
 
     mlflow.set_experiment(config["experiment_name"])
     with mlflow.start_run(run_name=config["run_name"]):
@@ -40,6 +42,12 @@ def train_func(config):
             "learning_rate": config["learning_rate"],
             "max_depth": config["max_depth"]
         })
+
+        shard = get_dataset_shard("train").to_pandas()
+        X = shard.drop(columns=[config["label_col"]])
+        y = shard[config["label_col"]]
+
+        dtrain = xgb.DMatrix(X, label=y)
 
         booster = xgb.train(
             params={
@@ -50,29 +58,23 @@ def train_func(config):
                 "max_depth": config["max_depth"]
             },
             dtrain=dtrain,
-            num_boost_round=config["n_estimators"]
+            num_boost_round=config["n_estimators"],
+            callbacks=[RayTrainReportCallback()]
         )
 
         booster.save_model("model.json")
         mlflow.xgboost.log_model(booster, artifact_path="xgb-model")
         mlflow.log_artifact("model.json")
 
-# -------------------- Ray Trainer --------------------
+
+# Set up Ray Trainer
 trainer = XGBoostTrainer(
+    train_loop_per_worker=train_func,
     scaling_config=ScalingConfig(num_workers=1, use_gpu=False),
-    label_column=CONFIG["label_col"],
-    params={
-        "objective": CONFIG["objective"],
-        "num_class": CONFIG["num_class"],
-        "eval_metric": CONFIG["eval_metric"],
-        "learning_rate": CONFIG["learning_rate"],
-        "max_depth": CONFIG["max_depth"]
-    },
-    num_boost_round=CONFIG["n_estimators"],
-    datasets={"train": pd.read_csv(CONFIG["dataset_path"])},
-    run_config=RunConfig(name="xgb-ray-job", verbose=1),
+    datasets={"train": ds},
+    run_config=RunConfig(name="xgb-ray-job"),
     train_loop_config=CONFIG
 )
 
 if __name__ == "__main__":
-    trainer.fit()
+    result = trainer.fit()
