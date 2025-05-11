@@ -162,7 +162,7 @@ services:
         CATEGORICAL_LABEL = ["sub_grade"]
 
         # Read raw training data
-        df = pd.read_csv("/mnt/data/LoanData/train.csv", low_memory=False)
+        df = pd.read_csv("/mnt/object/train.csv", low_memory=False)
         log_msgs = []
 
         # Check for column existence
@@ -248,12 +248,11 @@ services:
                 echo "Listing contents of /data/LoanData after transform stage:"
                 ls -lh /data/LoanData
 
-
   load-data:
     container_name: etl_load_data
     image: rclone/rclone:latest
     volumes:
-      - /mnt/data:/mnt/data 
+      - /mnt/data:/mnt/data
       - /mnt/object:/mnt/object
       - ~/.config/rclone/rclone.conf:/root/.config/rclone/rclone.conf:ro
     entrypoint: /bin/sh
