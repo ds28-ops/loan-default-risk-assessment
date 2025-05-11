@@ -8,7 +8,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./model.pth:/app/model.pth
+      #- ./model.pth:/app/model.pth
       - /mnt/object:/mnt/object
       - /mnt/block:/mnt/block
     networks:
