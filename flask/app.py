@@ -20,9 +20,10 @@ TEMPLATE = """
     {% if prediction %}
         <hr>
         <h2>Prediction</h2>
-        <p><strong>Predicted Class:</strong> {{ prediction.predicted_class }}</p>
+        <p><strong>Predicted Class (Raw Integer):</strong> {{ prediction.predicted_class }}</p>
+        <p><strong>Class Label:</strong> {{ prediction.class_name }}</p>
+        <p><strong>Confidence:</strong> {{ (prediction.confidence * 100) | round(2) }}%</p>
         <p><strong>True Label (if provided):</strong> {{ prediction.true_label }}</p>
-        <!-- Removed features_used block -->
     {% elif error %}
         <hr>
         <h2 style="color:red;">Error</h2>
@@ -31,6 +32,7 @@ TEMPLATE = """
 </body>
 </html>
 """
+
 
 
 @app.route("/", methods=["GET", "POST"])
