@@ -8,9 +8,10 @@ import joblib
 from src.evaluate import transform, predict
 
 
+# MODEL_PATH = "/mnt/block/minio_data/mlflow-artifacts/1/19ade86ae7634e788676cd21117edbfa/artifacts/model.pth"
+MODEL_PATH = "train/models/xgb-kfold-binary-13/model.pth"
 
 
-MODEL_PATH = "/mnt/block/minio_data/mlflow-artifacts/1/19ade86ae7634e788676cd21117edbfa/artifacts/model.pth"
 VAL_DATA_PATH = "/mnt/object/val/val_transformed.csv"
 IMP_FEATURES_ONLY = "/mnt/object/val/template_test/non_top_downscaled.csv"
 NO_IMP_FEATURES = "/mnt/object/val/template_test/top_downscaled.csv"
