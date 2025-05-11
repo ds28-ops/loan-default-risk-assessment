@@ -34,6 +34,7 @@ services:
     user: root
     volumes:
       - /mnt/data:/mnt/data
+      - /mnt/object:/mnt/object
     working_dir: /mnt/data/LoanData
     command:
       - bash
