@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
 
   fastapi_server:
@@ -16,8 +14,8 @@ services:
     networks:
       - eval_net
       - persist_block_default
-    depends_on:
-      - minio-create-prod-bucket
+    # depends_on:
+    #   - minio-create-prod-bucket
 
 
   flask:
