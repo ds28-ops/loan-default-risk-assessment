@@ -124,6 +124,10 @@ services:
       - AWS_ENDPOINT_URL=http://minio:9000
     depends_on:
       - ray-head
+    volumes:
+      - /mnt/object:/mnt/object
+      - /mnt/block:/mnt/block
+
 
   ray-worker-2:
     image: rayproject/ray:2.42.1
@@ -136,6 +140,9 @@ services:
       - AWS_ENDPOINT_URL=http://minio:9000
     depends_on:
       - ray-head
+    volumes:
+      - /mnt/object:/mnt/object
+      - /mnt/block:/mnt/block
 
 volumes:
   ray_tmp:
