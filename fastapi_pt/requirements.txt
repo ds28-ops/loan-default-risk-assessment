@@ -1,3 +1,8 @@
 fastapi
 uvicorn
+pandas
+scikit-learn
+joblib
+tqdm
 python-multipart
+xgboost
