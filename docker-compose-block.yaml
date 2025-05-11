@@ -90,3 +90,54 @@ services:
     
   #   command: >
   #     bash -c "pip install mlflow onnx onnxruntime xgboost && start-notebook.sh"
+
+
+  ray-head:
+      image: rayproject/ray:2.42.1
+      container_name: ray-head
+      command: >
+        /bin/sh -c "
+        mkdir -p /tmp/ray &&
+        ray metrics launch-prometheus &&
+        ray start --head --port=6379 --dashboard-host=0.0.0.0 --block --metrics-export-port=8080"
+      ports:
+        - "6379:6379"
+        - "8265:8265"
+        - "8080:8080"
+      shm_size: '12g'
+      environment:
+        - AWS_ACCESS_KEY_ID=your-access-key
+        - AWS_SECRET_ACCESS_KEY=your-secret-key
+        - AWS_ENDPOINT_URL=http://minio:9000
+      volumes:
+        - ray_tmp:/tmp/ray
+      user: root
+
+  ray-worker-1:
+    image: rayproject/ray:2.42.1
+    container_name: ray-worker-1
+    command: ["ray", "start", "--address=ray-head:6379", "--num-cpus=8", "--block"]
+    shm_size: '12g'
+    environment:
+      - AWS_ACCESS_KEY_ID=your-access-key
+      - AWS_SECRET_ACCESS_KEY=your-secret-key
+      - AWS_ENDPOINT_URL=http://minio:9000
+    depends_on:
+      - ray-head
+
+  ray-worker-2:
+    image: rayproject/ray:2.42.1
+    container_name: ray-worker-2
+    command: ["ray", "start", "--address=ray-head:6379", "--num-cpus=8", "--block"]
+    shm_size: '12g'
+    environment:
+      - AWS_ACCESS_KEY_ID=your-access-key
+      - AWS_SECRET_ACCESS_KEY=your-secret-key
+      - AWS_ENDPOINT_URL=http://minio:9000
+    depends_on:
+      - ray-head
+
+  volumes:
+    ray_tmp:
+    minio_data:
+    postgres_data:

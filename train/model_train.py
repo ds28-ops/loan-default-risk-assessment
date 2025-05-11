@@ -1,77 +1,79 @@
-import pandas as pd
 import os
-import json
+import pandas as pd
+import numpy as np
 import joblib
-from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import classification_report, confusion_matrix, f1_score, accuracy_score
+import mlflow
+import mlflow.xgboost
+from ray.train.sklearn import SklearnTrainer
+from ray.train import RunConfig, ScalingConfig, Checkpoint
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import accuracy_score, classification_report
 from xgboost import XGBClassifier
-import matplotlib.pyplot as plt
-import seaborn as sns
 
-# ──────────────── Paths ────────────────
-DATA_PATH = "/mnt/data/processed/train_ready.csv"
-MODEL_DIR = "/mnt/data/models"
-REPORT_DIR = os.path.join(MODEL_DIR, "xgb_risk_classifier")
-os.makedirs(REPORT_DIR, exist_ok=True)
+def train_fn(config):
+    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
+    mlflow.set_experiment(config["experiment_name"])
 
-# ──────────────── Load and Preprocess ────────────────
-df = pd.read_csv(DATA_PATH)
+    df = pd.read_csv(config["dataset_path"])
+    df[config["label_col"]] = df[config["label_col"]].map({"Low": 0, "Medium": 1, "High": 2})
+    X = df.drop(columns=[config["label_col"]])
+    y = df[config["label_col"]]
 
-# Separate features and target
-X = df.drop(columns=["risk_level"])
-y = df["risk_level"]
+    with mlflow.start_run(run_name=config["run_name"]):
+        mlflow.log_params({k: config[k] for k in ["n_estimators", "learning_rate", "max_depth", "n_splits"]})
 
-# Encode target
-label_encoder = LabelEncoder()
-y_encoded = label_encoder.fit_transform(y)
+        kf = StratifiedKFold(n_splits=config["n_splits"], shuffle=True, random_state=config["random_state"])
+        fold_accuracies = []
 
-# Encode categorical features
-for col in X.select_dtypes(include=["object", "category"]).columns:
-    X[col] = LabelEncoder().fit_transform(X[col].astype(str))
+        for fold, (train_index, val_index) in enumerate(kf.split(X, y)):
+            X_train, X_val = X.iloc[train_index], X.iloc[val_index]
+            y_train, y_val = y.iloc[train_index], y.iloc[val_index]
 
-# Split
-X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded)
+            model = XGBClassifier(
+                n_estimators=config["n_estimators"],
+                learning_rate=config["learning_rate"],
+                max_depth=config["max_depth"],
+                random_state=config["random_state"],
+                objective=config["objective"],
+                num_class=config["num_class"],
+                eval_metric=config["eval_metric"]
+            )
 
-# ──────────────── Model Training ────────────────
-USE_HYPERPARAM_TUNING = False  # Set to True to enable grid search
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_val)
+            acc = accuracy_score(y_val, y_pred)
+            fold_accuracies.append(acc)
 
-if USE_HYPERPARAM_TUNING:
-    param_grid = {
-        'max_depth': [3, 5, 7],
-        'learning_rate': [0.01, 0.1],
-        'n_estimators': [100, 200],
-        'subsample': [0.8, 1.0],
-    }
-    clf = GridSearchCV(XGBClassifier(use_label_encoder=False, eval_metric="mlogloss"), param_grid, cv=3, scoring='f1_weighted', verbose=1)
-else:
-    clf = XGBClassifier(use_label_encoder=False, eval_metric="mlogloss")
+            mlflow.log_metric(f"fold_{fold+1}_accuracy", acc)
 
-clf.fit(X_train, y_train)
+        avg_acc = np.mean(fold_accuracies)
+        mlflow.log_metric("avg_kfold_accuracy", avg_acc)
 
-# ──────────────── Evaluation ────────────────
-y_pred = clf.predict(X_test)
+        joblib.dump(model, config["save_path"])
+        mlflow.log_artifact(config["save_path"])
 
-report = classification_report(y_test, y_pred, target_names=label_encoder.classes_, output_dict=True)
-acc = accuracy_score(y_test, y_pred)
-cm = confusion_matrix(y_test, y_pred)
+config = {
+    "n_splits": 5,
+    "n_estimators": 100,
+    "learning_rate": 0.1,
+    "max_depth": 6,
+    "random_state": 42,
+    "objective": "multi:softprob",
+    "num_class": 3,
+    "eval_metric": "mlogloss",
+    "experiment_name": "loan-risk-xgboost",
+    "run_name": "xgb-ray-run",
+    "save_path": "loan_risk_model_ray.pth",
+    "dataset_path": "/mnt/object/LoanData/train_transformed.csv",
+    "label_col": "risk_level"
+}
 
-# Save classification report
-with open(os.path.join(REPORT_DIR, "classification_report.json"), "w") as f:
-    json.dump(report, f, indent=4)
+trainer = SklearnTrainer(
+    run_config=RunConfig(name="xgb-ray-run1"),
+    scaling_config=ScalingConfig(num_workers=1, use_gpu=False, resources_per_worker={"CPU": 4}),
+    datasets=None,
+    train_loop_config=config,
+    train_loop_per_worker=train_fn
+)
 
-# Save confusion matrix
-plt.figure(figsize=(6, 5))
-sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=label_encoder.classes_, yticklabels=label_encoder.classes_)
-plt.title("Confusion Matrix")
-plt.xlabel("Predicted")
-plt.ylabel("True")
-plt.tight_layout()
-plt.savefig(os.path.join(REPORT_DIR, "confusion_matrix.png"))
-plt.close()
-
-# ──────────────── Save Artifacts ────────────────
-joblib.dump(clf, os.path.join(REPORT_DIR, "xgb_model.pkl"))
-joblib.dump(label_encoder, os.path.join(REPORT_DIR, "label_encoder.pkl"))
-
-print(f"✅ Model training complete. Artifacts and reports saved to {REPORT_DIR}")
+result = trainer.fit()
