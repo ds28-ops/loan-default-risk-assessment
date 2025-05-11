@@ -6,3 +6,4 @@ joblib
 tqdm
 python-multipart
 xgboost
+prometheus-fastapi-instrumentator
