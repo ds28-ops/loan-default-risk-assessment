@@ -1,0 +1,111 @@
+2025/05/11 05:32:49 DEBUG : rclone: Version "v1.69.2" starting with parameters ["rclone" "mount" "chi_tacc:object-persist-project43" "/mnt/object" "--read-only" "--allow-other" "--daemon" "--log-file" "rclone.log" "--log-level" "DEBUG"]
+2025/05/11 05:32:49 DEBUG : Creating backend with remote "chi_tacc:object-persist-project43"
+2025/05/11 05:32:49 DEBUG : Using config file from "/home/cc/.config/rclone/rclone.conf"
+2025/05/11 05:32:49 DEBUG : Swift container object-persist-project43: Auto set use_segments_container to true
+2025/05/11 05:32:49 DEBUG : rclone: Version "v1.69.2" starting with parameters ["/usr/bin/rclone" "mount" "chi_tacc:object-persist-project43" "/mnt/object" "--read-only" "--allow-other" "--daemon" "--log-file" "rclone.log" "--log-level" "DEBUG"]
+2025/05/11 05:32:49 DEBUG : Creating backend with remote "chi_tacc:object-persist-project43"
+2025/05/11 05:32:49 DEBUG : Using config file from "/home/cc/.config/rclone/rclone.conf"
+2025/05/11 05:32:50 DEBUG : Swift container object-persist-project43: Auto set use_segments_container to true
+2025/05/11 05:32:50 INFO  : Swift container object-persist-project43: poll-interval is not supported by this remote
+2025/05/11 05:32:50 DEBUG : Swift container object-persist-project43: Mounting on "/mnt/object"
+2025/05/11 05:32:50 DEBUG : : Root: 
+2025/05/11 05:32:50 DEBUG : : >Root: node=/, err=<nil>
+2025/05/11 05:32:50 DEBUG : rclone: Version "v1.69.2" finishing with parameters ["/usr/bin/rclone" "mount" "chi_tacc:object-persist-project43" "/mnt/object" "--read-only" "--allow-other" "--daemon" "--log-file" "rclone.log" "--log-level" "DEBUG"]
+2025/05/11 05:32:53 DEBUG : /: Attr: 
+2025/05/11 05:32:53 DEBUG : /: >Attr: attr=valid=1s ino=0 size=0 mode=drwxrwxr-x, err=<nil>
+2025/05/11 05:32:53 DEBUG : /: ReadDirAll: 
+2025/05/11 05:32:54 DEBUG : /: >ReadDirAll: item=5, err=<nil>
+2025/05/11 05:32:54 DEBUG : /: Lookup: name="etl_log.txt"
+2025/05/11 05:32:54 DEBUG : /: >Lookup: node=etl_log.txt, err=<nil>
+2025/05/11 05:32:54 DEBUG : etl_log.txt: Attr: 
+2025/05/11 05:32:54 DEBUG : etl_log.txt: >Attr: a=valid=1s ino=0 size=3228 mode=-rw-rw-r--, err=<nil>
+2025/05/11 05:32:54 DEBUG : /: Lookup: name="train.csv"
+2025/05/11 05:32:54 DEBUG : /: >Lookup: node=train.csv, err=<nil>
+2025/05/11 05:32:54 DEBUG : train.csv: Attr: 
+2025/05/11 05:32:54 DEBUG : train.csv: >Attr: a=valid=1s ino=0 size=1190379448 mode=-rw-rw-r--, err=<nil>
+2025/05/11 05:32:54 DEBUG : /: Lookup: name="train_transformed.csv"
+2025/05/11 05:32:54 DEBUG : /: >Lookup: node=train_transformed.csv, err=<nil>
+2025/05/11 05:32:54 DEBUG : train_transformed.csv: Attr: 
+2025/05/11 05:32:54 DEBUG : train_transformed.csv: >Attr: a=valid=1s ino=0 size=2241816812 mode=-rw-rw-r--, err=<nil>
+2025/05/11 05:32:59 DEBUG : /: Attr: 
+2025/05/11 05:32:59 DEBUG : /: >Attr: attr=valid=1s ino=0 size=0 mode=drwxrwxr-x, err=<nil>
+2025/05/11 05:32:59 DEBUG : /: ReadDirAll: 
+2025/05/11 05:32:59 DEBUG : /: >ReadDirAll: item=5, err=<nil>
+2025/05/11 05:32:59 DEBUG : /: Lookup: name="etl_log.txt"
+2025/05/11 05:32:59 DEBUG : /: >Lookup: node=etl_log.txt, err=<nil>
+2025/05/11 05:32:59 DEBUG : etl_log.txt: Attr: 
+2025/05/11 05:32:59 DEBUG : etl_log.txt: >Attr: a=valid=1s ino=0 size=3228 mode=-rw-rw-r--, err=<nil>
+2025/05/11 05:32:59 DEBUG : /: Lookup: name="train.csv"
+2025/05/11 05:32:59 DEBUG : /: >Lookup: node=train.csv, err=<nil>
+2025/05/11 05:32:59 DEBUG : train.csv: Attr: 
+2025/05/11 05:32:59 DEBUG : train.csv: >Attr: a=valid=1s ino=0 size=1190379448 mode=-rw-rw-r--, err=<nil>
+2025/05/11 05:32:59 DEBUG : /: Lookup: name="train_transformed.csv"
+2025/05/11 05:32:59 DEBUG : /: >Lookup: node=train_transformed.csv, err=<nil>
+2025/05/11 05:32:59 DEBUG : train_transformed.csv: Attr: 
+2025/05/11 05:32:59 DEBUG : train_transformed.csv: >Attr: a=valid=1s ino=0 size=2241816812 mode=-rw-rw-r--, err=<nil>
+2025/05/11 05:33:48 DEBUG : /: Attr: 
+2025/05/11 05:33:48 DEBUG : /: >Attr: attr=valid=1s ino=0 size=0 mode=drwxrwxr-x, err=<nil>
+2025/05/11 05:35:22 DEBUG : /: Attr: 
+2025/05/11 05:35:22 DEBUG : /: >Attr: attr=valid=1s ino=0 size=0 mode=drwxrwxr-x, err=<nil>
+2025/05/11 05:35:22 DEBUG : /: ReadDirAll: 
+2025/05/11 05:35:22 DEBUG : /: >ReadDirAll: item=5, err=<nil>
+2025/05/11 05:35:22 DEBUG : /: Lookup: name="etl_log.txt"
+2025/05/11 05:35:22 DEBUG : /: >Lookup: node=etl_log.txt, err=<nil>
+2025/05/11 05:35:22 DEBUG : etl_log.txt: Attr: 
+2025/05/11 05:35:22 DEBUG : etl_log.txt: >Attr: a=valid=1s ino=0 size=3228 mode=-rw-rw-r--, err=<nil>
+2025/05/11 05:35:22 DEBUG : /: Lookup: name="train.csv"
+2025/05/11 05:35:22 DEBUG : /: >Lookup: node=train.csv, err=<nil>
+2025/05/11 05:35:22 DEBUG : train.csv: Attr: 
+2025/05/11 05:35:22 DEBUG : train.csv: >Attr: a=valid=1s ino=0 size=1190379448 mode=-rw-rw-r--, err=<nil>
+2025/05/11 05:35:22 DEBUG : /: Lookup: name="train_transformed.csv"
+2025/05/11 05:35:22 DEBUG : /: >Lookup: node=train_transformed.csv, err=<nil>
+2025/05/11 05:35:22 DEBUG : train_transformed.csv: Attr: 
+2025/05/11 05:35:22 DEBUG : train_transformed.csv: >Attr: a=valid=1s ino=0 size=2241816812 mode=-rw-rw-r--, err=<nil>
+2025/05/11 05:35:46 DEBUG : /: Attr: 
+2025/05/11 05:35:46 DEBUG : /: >Attr: attr=valid=1s ino=0 size=0 mode=drwxrwxr-x, err=<nil>
+2025/05/11 05:35:46 DEBUG : /: ReadDirAll: 
+2025/05/11 05:35:46 DEBUG : /: >ReadDirAll: item=5, err=<nil>
+2025/05/11 05:35:46 DEBUG : /: Lookup: name="etl_log.txt"
+2025/05/11 05:35:46 DEBUG : /: >Lookup: node=etl_log.txt, err=<nil>
+2025/05/11 05:35:46 DEBUG : etl_log.txt: Attr: 
+2025/05/11 05:35:46 DEBUG : etl_log.txt: >Attr: a=valid=1s ino=0 size=3228 mode=-rw-rw-r--, err=<nil>
+2025/05/11 05:35:46 DEBUG : /: Lookup: name="train.csv"
+2025/05/11 05:35:46 DEBUG : /: >Lookup: node=train.csv, err=<nil>
+2025/05/11 05:35:46 DEBUG : train.csv: Attr: 
+2025/05/11 05:35:46 DEBUG : train.csv: >Attr: a=valid=1s ino=0 size=1190379448 mode=-rw-rw-r--, err=<nil>
+2025/05/11 05:35:46 DEBUG : /: Lookup: name="train_transformed.csv"
+2025/05/11 05:35:46 DEBUG : /: >Lookup: node=train_transformed.csv, err=<nil>
+2025/05/11 05:35:46 DEBUG : train_transformed.csv: Attr: 
+2025/05/11 05:35:46 DEBUG : train_transformed.csv: >Attr: a=valid=1s ino=0 size=2241816812 mode=-rw-rw-r--, err=<nil>
+2025/05/11 05:36:24 DEBUG : /: Attr: 
+2025/05/11 05:36:24 DEBUG : /: >Attr: attr=valid=1s ino=0 size=0 mode=drwxrwxr-x, err=<nil>
+2025/05/11 05:36:24 DEBUG : /: ReadDirAll: 
+2025/05/11 05:36:24 DEBUG : /: >ReadDirAll: item=5, err=<nil>
+2025/05/11 05:36:24 DEBUG : /: Lookup: name="etl_log.txt"
+2025/05/11 05:36:24 DEBUG : /: >Lookup: node=etl_log.txt, err=<nil>
+2025/05/11 05:36:24 DEBUG : etl_log.txt: Attr: 
+2025/05/11 05:36:24 DEBUG : etl_log.txt: >Attr: a=valid=1s ino=0 size=3228 mode=-rw-rw-r--, err=<nil>
+2025/05/11 05:36:24 DEBUG : /: Lookup: name="train.csv"
+2025/05/11 05:36:24 DEBUG : /: >Lookup: node=train.csv, err=<nil>
+2025/05/11 05:36:24 DEBUG : train.csv: Attr: 
+2025/05/11 05:36:24 DEBUG : train.csv: >Attr: a=valid=1s ino=0 size=1190379448 mode=-rw-rw-r--, err=<nil>
+2025/05/11 05:36:24 DEBUG : /: Lookup: name="train_transformed.csv"
+2025/05/11 05:36:24 DEBUG : /: >Lookup: node=train_transformed.csv, err=<nil>
+2025/05/11 05:36:24 DEBUG : train_transformed.csv: Attr: 
+2025/05/11 05:36:24 DEBUG : train_transformed.csv: >Attr: a=valid=1s ino=0 size=2241816812 mode=-rw-rw-r--, err=<nil>
+2025/05/11 05:37:07 DEBUG : /: Attr: 
+2025/05/11 05:37:07 DEBUG : /: >Attr: attr=valid=1s ino=0 size=0 mode=drwxrwxr-x, err=<nil>
+2025/05/11 05:37:07 DEBUG : /: ReadDirAll: 
+2025/05/11 05:37:07 DEBUG : /: >ReadDirAll: item=5, err=<nil>
+2025/05/11 05:37:07 DEBUG : /: Lookup: name="etl_log.txt"
+2025/05/11 05:37:07 DEBUG : /: >Lookup: node=etl_log.txt, err=<nil>
+2025/05/11 05:37:07 DEBUG : etl_log.txt: Attr: 
+2025/05/11 05:37:07 DEBUG : etl_log.txt: >Attr: a=valid=1s ino=0 size=3228 mode=-rw-rw-r--, err=<nil>
+2025/05/11 05:37:07 DEBUG : /: Lookup: name="train.csv"
+2025/05/11 05:37:07 DEBUG : /: >Lookup: node=train.csv, err=<nil>
+2025/05/11 05:37:07 DEBUG : train.csv: Attr: 
+2025/05/11 05:37:07 DEBUG : train.csv: >Attr: a=valid=1s ino=0 size=1190379448 mode=-rw-rw-r--, err=<nil>
+2025/05/11 05:37:07 DEBUG : /: Lookup: name="train_transformed.csv"
+2025/05/11 05:37:07 DEBUG : /: >Lookup: node=train_transformed.csv, err=<nil>
+2025/05/11 05:37:07 DEBUG : train_transformed.csv: Attr: 
+2025/05/11 05:37:07 DEBUG : train_transformed.csv: >Attr: a=valid=1s ino=0 size=2241816812 mode=-rw-rw-r--, err=<nil>
