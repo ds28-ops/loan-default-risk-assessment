@@ -1,0 +1,9 @@
+mlflow
+xgboost
+pandas
+numpy
+scikit-learn
+joblib
+xgboost_ray
+ray[default]
+ray[train]
