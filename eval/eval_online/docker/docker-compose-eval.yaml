@@ -63,7 +63,7 @@ services:
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__FERNET_KEY=wmSpjmCJ477jqpJE9BlzuzzI_Cw4P4RRGBZj1KeAPcU=
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://user:password@postgres/mlflowdb
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://user:password@postgres/airflowdb
       - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=True
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__WEBSERVER__SECRET_KEY=some-secret
@@ -89,7 +89,7 @@ services:
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__FERNET_KEY=wmSpjmCJ477jqpJE9BlzuzzI_Cw4P4RRGBZj1KeAPcU=
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://user:password@postgres/mlflowdb
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://user:password@postgres/airflowdb
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - MINIO_URL=http://minio:9000
       - MINIO_USER=your-access-key
