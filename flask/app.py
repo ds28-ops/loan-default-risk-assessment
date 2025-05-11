@@ -22,13 +22,7 @@ TEMPLATE = """
         <h2>Prediction</h2>
         <p><strong>Predicted Class:</strong> {{ prediction.predicted_class }}</p>
         <p><strong>True Label (if provided):</strong> {{ prediction.true_label }}</p>
-
-        <h2>Extracted Features</h2>
-        <ul>
-        {% for k, v in prediction.features_used.items() %}
-            <li><strong>{{ k }}:</strong> {{ v }}</li>
-        {% endfor %}
-        </ul>
+        <!-- Removed features_used block -->
     {% elif error %}
         <hr>
         <h2 style="color:red;">Error</h2>
@@ -37,6 +31,7 @@ TEMPLATE = """
 </body>
 </html>
 """
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
