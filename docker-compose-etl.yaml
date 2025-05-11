@@ -208,7 +208,6 @@ services:
             df[col] = le.fit_transform(df[col].astype(str))
             label_encoders[col] = le
             log_msgs.append(f"Label-encoded: {col}")
-
         # Standard scaling
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
         scaler = StandardScaler()
@@ -220,7 +219,7 @@ services:
         log_msgs.append("Re-attached label column.")
 
         # Save transformed data
-        df.to_csv("train_transformed.csv", index=False)
+        df.to_csv("train_transformed_1.csv", index=False)
 
         # Save transformation artifacts
         artifacts = {
@@ -237,7 +236,7 @@ services:
         joblib.dump(artifacts, "transform_artifacts.pkl")
 
         # Save logs
-        with open("etl_log.txt", "w") as f:
+        with open("etl_log_1.txt", "w") as f:
             for line in log_msgs:
                 f.write(line + "\n")
 

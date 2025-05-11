@@ -1,77 +1,80 @@
-import pandas as pd
 import os
-import json
-import joblib
-from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import classification_report, confusion_matrix, f1_score, accuracy_score
-from xgboost import XGBClassifier
-import matplotlib.pyplot as plt
-import seaborn as sns
+import pandas as pd
+import numpy as np
+import mlflow
+import mlflow.xgboost
+import xgboost as xgb
+import ray
+from ray.train.xgboost import XGBoostTrainer, RayTrainReportCallback
+from ray.train import ScalingConfig, RunConfig
 
-# ──────────────── Paths ────────────────
-DATA_PATH = "/mnt/data/processed/train_ready.csv"
-MODEL_DIR = "/mnt/data/models"
-REPORT_DIR = os.path.join(MODEL_DIR, "xgb_risk_classifier")
-os.makedirs(REPORT_DIR, exist_ok=True)
+# Config
+CONFIG = {
+    "n_estimators": 100,
+    "learning_rate": 0.1,
+    "max_depth": 6,
+    "random_state": 42,
+    "objective": "multi:softprob",
+    "num_class": 3,
+    "eval_metric": "mlogloss",
+    "experiment_name": "loan-risk-xgboost",
+    "run_name": "xgb-ray-run",
+    "dataset_path": "/mnt/object/train_transformed.csv",
+    "label_col": "risk_level"
+}
+data_path = os.getenv("DATA_PATH")
+# Load dataset as Ray Data
+df = pd.read_csv(os.path.join(data_path, "train_transformed.csv"))
+df[CONFIG["label_col"]] = df[CONFIG["label_col"]].map({"Low": 0, "Medium": 1, "High": 2})
+ds = ray.data.from_pandas(df)
 
-# ──────────────── Load and Preprocess ────────────────
-df = pd.read_csv(DATA_PATH)
+# Training function
+def train_func(config):
+    import mlflow
+    import mlflow.xgboost
+    import xgboost as xgb
+    from ray.train import get_dataset_shard
 
-# Separate features and target
-X = df.drop(columns=["risk_level"])
-y = df["risk_level"]
+    mlflow.set_experiment(config["experiment_name"])
+    with mlflow.start_run(run_name=config["run_name"]):
+        mlflow.log_params({
+            "n_estimators": config["n_estimators"],
+            "learning_rate": config["learning_rate"],
+            "max_depth": config["max_depth"]
+        })
 
-# Encode target
-label_encoder = LabelEncoder()
-y_encoded = label_encoder.fit_transform(y)
+        shard = get_dataset_shard("train").to_pandas()
+        X = shard.drop(columns=[config["label_col"]])
+        y = shard[config["label_col"]]
 
-# Encode categorical features
-for col in X.select_dtypes(include=["object", "category"]).columns:
-    X[col] = LabelEncoder().fit_transform(X[col].astype(str))
+        dtrain = xgb.DMatrix(X, label=y)
 
-# Split
-X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded)
+        booster = xgb.train(
+            params={
+                "objective": config["objective"],
+                "num_class": config["num_class"],
+                "eval_metric": config["eval_metric"],
+                "learning_rate": config["learning_rate"],
+                "max_depth": config["max_depth"]
+            },
+            dtrain=dtrain,
+            num_boost_round=config["n_estimators"],
+            callbacks=[RayTrainReportCallback()]
+        )
 
-# ──────────────── Model Training ────────────────
-USE_HYPERPARAM_TUNING = False  # Set to True to enable grid search
+        booster.save_model("model.json")
+        mlflow.xgboost.log_model(booster, artifact_path="xgb-model")
+        mlflow.log_artifact("model.json")
 
-if USE_HYPERPARAM_TUNING:
-    param_grid = {
-        'max_depth': [3, 5, 7],
-        'learning_rate': [0.01, 0.1],
-        'n_estimators': [100, 200],
-        'subsample': [0.8, 1.0],
-    }
-    clf = GridSearchCV(XGBClassifier(use_label_encoder=False, eval_metric="mlogloss"), param_grid, cv=3, scoring='f1_weighted', verbose=1)
-else:
-    clf = XGBClassifier(use_label_encoder=False, eval_metric="mlogloss")
 
-clf.fit(X_train, y_train)
+# Set up Ray Trainer
+trainer = XGBoostTrainer(
+    train_loop_per_worker=train_func,
+    scaling_config=ScalingConfig(num_workers=1, use_gpu=False),
+    datasets={"train": ds},
+    run_config=RunConfig(name="xgb-ray-job"),
+    train_loop_config=CONFIG
+)
 
-# ──────────────── Evaluation ────────────────
-y_pred = clf.predict(X_test)
-
-report = classification_report(y_test, y_pred, target_names=label_encoder.classes_, output_dict=True)
-acc = accuracy_score(y_test, y_pred)
-cm = confusion_matrix(y_test, y_pred)
-
-# Save classification report
-with open(os.path.join(REPORT_DIR, "classification_report.json"), "w") as f:
-    json.dump(report, f, indent=4)
-
-# Save confusion matrix
-plt.figure(figsize=(6, 5))
-sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=label_encoder.classes_, yticklabels=label_encoder.classes_)
-plt.title("Confusion Matrix")
-plt.xlabel("Predicted")
-plt.ylabel("True")
-plt.tight_layout()
-plt.savefig(os.path.join(REPORT_DIR, "confusion_matrix.png"))
-plt.close()
-
-# ──────────────── Save Artifacts ────────────────
-joblib.dump(clf, os.path.join(REPORT_DIR, "xgb_model.pkl"))
-joblib.dump(label_encoder, os.path.join(REPORT_DIR, "label_encoder.pkl"))
-
-print(f"✅ Model training complete. Artifacts and reports saved to {REPORT_DIR}")
+if __name__ == "__main__":
+    result = trainer.fit()

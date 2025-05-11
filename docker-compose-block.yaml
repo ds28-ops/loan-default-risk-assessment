@@ -69,49 +69,27 @@ services:
       mlflow server --backend-store-uri postgresql://user:password@postgres/mlflowdb 
       --artifacts-destination s3://mlflow-artifacts/ --serve-artifacts --host 0.0.0.0 --port 8000"
 
-  # jupyter:
-  #   image: quay.io/jupyter/pytorch-notebook:pytorch-2.5.1
-  #   container_name: jupyter
-  #   ports:
-  #     - "8888:8888"
-  #   shm_size: 8g
-  #   environment:
-  #     - MLFLOW_TRACKING_URI=http://${HOST_IP}:8000/
-  #   volumes:
-  #     - ~/loanradar:/home/jovyan/work
-  #     - /mnt/object:/mnt/object
-  #     - /mnt/block:/mnt/block
-  #     # - type: bind
-  #     #   source: /mnt/object
-  #     #   target: /mnt/object
-  #     # - type: bind
-  #     #   source: /mnt/data
-  #     #   target: /mnt/data
-    
-  #   command: >
-  #     bash -c "pip install mlflow onnx onnxruntime xgboost && start-notebook.sh"
-
-
   ray-head:
-      image: rayproject/ray:2.42.1
-      container_name: ray-head
-      command: >
-        /bin/sh -c "
-        mkdir -p /tmp/ray &&
-        ray metrics launch-prometheus &&
-        ray start --head --port=6379 --dashboard-host=0.0.0.0 --block --metrics-export-port=8080"
-      ports:
-        - "6379:6379"
-        - "8265:8265"
-        - "8080:8080"
-      shm_size: '12g'
-      environment:
-        - AWS_ACCESS_KEY_ID=your-access-key
-        - AWS_SECRET_ACCESS_KEY=your-secret-key
-        - AWS_ENDPOINT_URL=http://minio:9000
-      volumes:
-        - ray_tmp:/tmp/ray
-      user: root
+    image: rayproject/ray:2.42.1
+    container_name: ray-head
+    command: >
+      /bin/sh -c "
+      mkdir -p /tmp/ray &&
+      ray metrics launch-prometheus &&
+      ray start --head --port=6379 --dashboard-host=0.0.0.0 --block --metrics-export-port=8080"
+    ports:
+      - "6379:6379"
+      - "8265:8265"
+      - "8080:8080"
+    shm_size: '12g'
+    environment:
+      - AWS_ACCESS_KEY_ID=your-access-key
+      - AWS_SECRET_ACCESS_KEY=your-secret-key
+      - AWS_ENDPOINT_URL=http://minio:9000
+    volumes:
+      - ray_tmp:/tmp/ray
+      - /mnt/object:/mnt/object 
+    user: root
 
   ray-worker-1:
     image: rayproject/ray:2.42.1
@@ -128,7 +106,6 @@ services:
       - /mnt/object:/mnt/object
       - /mnt/block:/mnt/block
 
-
   ray-worker-2:
     image: rayproject/ray:2.42.1
     container_name: ray-worker-2
@@ -144,6 +121,7 @@ services:
       - /mnt/object:/mnt/object
       - /mnt/block:/mnt/block
 
+# ✅ This block must be at root level, NOT under `services`
 volumes:
   ray_tmp:
   minio_data:
