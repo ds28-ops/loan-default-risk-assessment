@@ -86,10 +86,12 @@ async def predict_txt(file: UploadFile = File(...)):
     try:
         raw_df = parse_txt_to_df(text)
         raw_features = raw_df.to_dict(orient="records")[0]
+        # if LABEL_COL in raw_df.columns:
+        #     raw_df = raw_df.drop(columns=[LABEL_COL])
 
         transformed_df = transform_input_df(raw_df)
         true_label = transformed_df[LABEL_COL].iloc[0] if LABEL_COL in transformed_df.columns else None
-        transformed_df = transformed_df.drop(LABEL_COL)
+        transformed_df = transformed_df.drop(columns=[LABEL_COL])
         prediction = model.predict(transformed_df.values)[0]
 
         return JSONResponse({
