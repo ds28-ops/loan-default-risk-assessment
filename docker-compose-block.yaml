@@ -137,7 +137,7 @@ services:
     depends_on:
       - ray-head
 
-  volumes:
-    ray_tmp:
-    minio_data:
-    postgres_data:
+volumes:
+  ray_tmp:
+  minio_data:
+  postgres_data:
