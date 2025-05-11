@@ -1,70 +1,70 @@
 import os
-import ray
 import pandas as pd
+import ray
+from ray import tune
+from ray.air.integrations.mlflow import setup_mlflow
 import xgboost as xgb
-import mlflow
-import mlflow.xgboost
-from ray.train.xgboost import XGBoostTrainer, XGBoostCheckpoint
-from ray.train import ScalingConfig, RunConfig, FailureConfig
 
 CONFIG = {
     "n_estimators": 100,
     "learning_rate": 0.1,
     "max_depth": 6,
-    "random_state": 42,
     "objective": "multi:softprob",
     "num_class": 3,
     "eval_metric": "mlogloss",
-    "experiment_name": "loan-risk-xgboost",
-    "run_name": "xgb-ray-run",
     "dataset_path": "/mnt/object/train_transformed.csv",
-    "label_col": "risk_level"
+    "label_col": "risk_level",
+    "experiment_name": "loan-risk-xgboost",
+    "run_name": "xgb-ray-tune",
+    "tracking_uri": os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:8000")
 }
 
-# Load data
-df = pd.read_csv(CONFIG["dataset_path"])
-df[CONFIG["label_col"]] = df[CONFIG["label_col"]].map({"Low": 0, "Medium": 1, "High": 2})
-ds = ray.data.from_pandas(df)
-
-# Define trainer
-trainer = XGBoostTrainer(
-    label_column=CONFIG["label_col"],
-    params={
-        "objective": CONFIG["objective"],
-        "num_class": CONFIG["num_class"],
-        "eval_metric": CONFIG["eval_metric"],
-        "learning_rate": CONFIG["learning_rate"],
-        "max_depth": CONFIG["max_depth"],
-        "tree_method": "hist"
-    },
-    datasets={"train": ds},
-    num_boost_round=CONFIG["n_estimators"],
-    scaling_config=ScalingConfig(
-        num_workers=2,
-        resources_per_worker={"CPU": 4},
-        use_gpu=False
-    ),
-    run_config=RunConfig(
-        name="xgb-ray-job",
-        failure_config=FailureConfig(max_failures=2)
+def train_fn(config):
+    mlflow = setup_mlflow(
+        config=config,
+        experiment_name=config["experiment_name"],
+        tracking_uri=config["tracking_uri"],
+        run_name=config["run_name"]
     )
-)
+
+    df = pd.read_csv(config["dataset_path"])
+    df[config["label_col"]] = df[config["label_col"]].map({"Low": 0, "Medium": 1, "High": 2})
+    X = df.drop(columns=[config["label_col"]])
+    y = df[config["label_col"]]
+
+    dtrain = xgb.DMatrix(X, label=y)
+
+    booster = xgb.train(
+        params={
+            "objective": config["objective"],
+            "num_class": config["num_class"],
+            "eval_metric": config["eval_metric"],
+            "learning_rate": config["learning_rate"],
+            "max_depth": config["max_depth"],
+            "tree_method": "hist"
+        },
+        dtrain=dtrain,
+        num_boost_round=config["n_estimators"]
+    )
+
+    booster.save_model("model.pth")
+    mlflow.log_artifact("model.pth")
+    mlflow.log_params({
+        "n_estimators": config["n_estimators"],
+        "learning_rate": config["learning_rate"],
+        "max_depth": config["max_depth"]
+    })
+    mlflow.log_metric("final_iteration", config["n_estimators"])
+    tune.report(success=1)
 
 if __name__ == "__main__":
-    result = trainer.fit()
+    tuner = tune.Tuner(
+        tune.with_resources(train_fn, resources={"cpu": 4}),
+        param_space=CONFIG,
+        run_config=tune.RunConfig(
+            name="xgb-ray-tune"
+        ),
+        tune_config=tune.TuneConfig(num_samples=1)
+    )
 
-    # Load model from Ray checkpoint
-    booster = XGBoostCheckpoint.from_checkpoint(result.checkpoint).get_model()
-    booster.save_model("model.pth")
-
-    # Log to MLflow
-    mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://127.0.0.1:8000"))
-    mlflow.set_experiment(CONFIG["experiment_name"])
-    with mlflow.start_run(run_name=CONFIG["run_name"]):
-        mlflow.log_params({
-            "n_estimators": CONFIG["n_estimators"],
-            "learning_rate": CONFIG["learning_rate"],
-            "max_depth": CONFIG["max_depth"]
-        })
-        mlflow.xgboost.log_model(booster, artifact_path="xgb-model")
-        mlflow.log_artifact("model.pth")
+    tuner.fit()
