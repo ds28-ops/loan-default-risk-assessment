@@ -2,12 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY fastapi_pt/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY ..
 COPY ../train/models/xgb-kfold-binary-13/model.pth .
-COPY transform_artifacts.pkl .
+COPY fastapi_pt/transform_artifacts.pkl .
 
 
 EXPOSE 8000
