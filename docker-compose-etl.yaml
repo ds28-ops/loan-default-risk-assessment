@@ -23,7 +23,11 @@ services:
         cd LoanData/train
 
         echo "Downloading training CSV..."
-        gdown --fuzzy 'https://drive.google.com/file/d/1BLKJFsTj23G7YCT0BjAOgFFHZPYOeSFN' -O train.csv
+        # gdown --fuzzy 'https://drive.google.com/file/d/1BLKJFsTj23G7YCT0BjAOgFFHZPYOeSFN' -O train.csv
+        gdown --fuzzy --no-cookies "https://drive.google.com/file/d/1BLKJFsTj23G7YCT0BjAOgFFHZPYOeSFN" -O train.csv
+
+        file train.csv
+        head train.csv
 
         echo "Listing contents of /data after extract stage:"
         ls -l /mnt/data/LoanData
