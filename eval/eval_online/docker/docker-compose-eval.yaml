@@ -1,14 +1,12 @@
-
-
 services:
 
   fastapi_server:
     build:
-      context: ../../../fastapi_pt
-      dockerfile: Dockerfile
+      context: .../../..
+      dockerfile: fastapi_pt/Dockerfile
     container_name: fastapi_server
     ports:
-      - "8001:8000"
+      - "8000:8000"
     volumes:
       - ./model.pth:/app/model.pth
       - /mnt/object:/mnt/object
