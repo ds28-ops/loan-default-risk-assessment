@@ -91,7 +91,7 @@ async def predict_txt(file: UploadFile = File(...)):
             df = df.drop(columns=[LABEL_COL])
 
         transformed_df = transform_input_df(df)
-        prediction = int(model.predict(transformed_df)[0])
+        prediction = model.predict(transformed_df.values)[0]
 
         return JSONResponse({
             "predicted_class": prediction,
