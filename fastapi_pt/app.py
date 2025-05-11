@@ -37,14 +37,11 @@ def parse_txt_to_df(text: str):
     return df
 
 def transform_input_df(df):
-    df = df[[col for col in KEEP_COLS if col != LABEL_COL and col in df.columns]]
 
-    for col in KEEP_COLS:
-        if col == LABEL_COL:
-            continue
-        if col not in df.columns:
-            df[col] = np.nan
+    df = df[KEEP_COLS]
+    label_series = df.pop(LABEL_COL).map(lambda x: 0 if x == "Low" else 1)
 
+    # Fill NaNs using training stats
     for col in df.columns:
         if df[col].isnull().sum() > 0:
             if col in mode_values:
@@ -54,19 +51,30 @@ def transform_input_df(df):
             else:
                 df[col] = df[col].fillna(0)
 
+    # One-hot encoding
     for col in CATEGORICAL_ONEHOT:
         dummies = pd.get_dummies(df[col], prefix=col)
-        for dummy_col in onehot_columns_train:
+    
+        # Filter relevant onehot columns for current variable
+        relevant_cols = [c for c in onehot_columns_train if c.startswith(f"{col}_")]
+    
+            # Add missing dummy columns
+        for dummy_col in relevant_cols:
             if dummy_col not in dummies.columns:
                 dummies[dummy_col] = 0
-        dummies = dummies[onehot_columns_train]
+
+        dummies = dummies[relevant_cols]
         df = pd.concat([df.drop(columns=[col]), dummies], axis=1)
 
+
+    # Label encoding
     for col in CATEGORICAL_LABEL:
         le = label_encoders[col]
         df[col] = le.transform(df[col].astype(str))
 
+    # Standard scaling
     df[numeric_cols] = scaler.transform(df[numeric_cols])
+    df[LABEL_COL] = label_series.reset_index(drop=True)
 
     return df
 
@@ -76,18 +84,22 @@ async def predict_txt(file: UploadFile = File(...)):
     text = contents.decode("utf-8")
 
     try:
-        df = parse_txt_to_df(text)
-        true_label = df[LABEL_COL].iloc[0] if LABEL_COL in df.columns else None
-        if LABEL_COL in df.columns:
-            df = df.drop(columns=[LABEL_COL])
+        raw_df = parse_txt_to_df(text)
+        raw_features = raw_df.to_dict(orient="records")[0]
+        if LABEL_COL in raw_df.columns:
+            raw_df = raw_df.drop(columns=[LABEL_COL])
 
-        transformed_df = transform_input_df(df)
+        transformed_df = transform_input_df(raw_df)
+        true_label = transformed_df[LABEL_COL].iloc[0] if LABEL_COL in transformed_df.columns else None
+        transformed_df = transformed_df.drop(LABEL_COL)
         prediction = model.predict(transformed_df.values)[0]
 
         return JSONResponse({
             "predicted_class": int(prediction),
             "true_label": true_label,
+            "raw_extracted_features": raw_features,
             "features_used": transformed_df.to_dict(orient="records")[0]
         })
     except Exception as e:
         return JSONResponse({"error": str(e)})
+
