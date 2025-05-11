@@ -27,7 +27,7 @@ class_counter = Counter(
 classes = ["Low", "High"]
 
 
-Instrumentator().instrument(app).expose(app)
+# Instrumentator().instrument(app).expose(app)
 # Load model and transform artifacts
 model = joblib.load("model.pth")
 artifacts = joblib.load("transform_artifacts.pkl")
@@ -128,3 +128,4 @@ async def predict_txt(file: UploadFile = File(...)):
     except Exception as e:
         return JSONResponse({"error": str(e)})
 
+Instrumentator().instrument(app).expose(app)

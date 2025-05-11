@@ -162,6 +162,7 @@ volumes:
 
 networks:
   eval_net:
+    name: eval_net
     driver: bridge
   persist_block_default:
     external: true
