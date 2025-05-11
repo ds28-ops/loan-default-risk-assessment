@@ -86,6 +86,7 @@ services:
       - AWS_ACCESS_KEY_ID=your-access-key
       - AWS_SECRET_ACCESS_KEY=your-secret-key
       - AWS_ENDPOINT_URL=http://minio:9000
+      - MLFLOW_TRACKING_URI=http://mlflow:8000
     volumes:
       - ray_tmp:/tmp/ray
       - /mnt/object:/mnt/object
@@ -100,6 +101,7 @@ services:
       - AWS_ACCESS_KEY_ID=your-access-key
       - AWS_SECRET_ACCESS_KEY=your-secret-key
       - AWS_ENDPOINT_URL=http://minio:9000
+      - MLFLOW_TRACKING_URI=http://mlflow:8000
     depends_on:
       - ray-head
     volumes:
@@ -115,7 +117,7 @@ services:
       - AWS_ACCESS_KEY_ID=your-access-key
       - AWS_SECRET_ACCESS_KEY=your-secret-key
       - AWS_ENDPOINT_URL=http://minio:9000
-    depends_on:
+      - MLFLOW_TRACKING_URI=http://mlflow:8000
       - ray-head
     volumes:
       - /mnt/object:/mnt/object
