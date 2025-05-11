@@ -3,7 +3,6 @@ uvicorn
 pandas
 scikit-learn
 joblib
-torch
 tqdm
 python-multipart
 xgboost

@@ -3,7 +3,6 @@ from fastapi.responses import JSONResponse
 import pandas as pd
 import numpy as np
 import joblib
-import torch
 import os
 
 from sklearn.preprocessing import LabelEncoder
@@ -11,11 +10,9 @@ from sklearn.preprocessing import LabelEncoder
 app = FastAPI()
 
 # === Load model + transformation artifacts ===
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = joblib.load("model.pth")
-model.eval()
-
 artifacts = joblib.load("transform_artifacts.pkl")
+
 KEEP_COLS = artifacts["keep_cols"]
 CATEGORICAL_ONEHOT = artifacts["categorical_onehot"]
 CATEGORICAL_LABEL = artifacts["categorical_label"]
@@ -42,14 +39,12 @@ def parse_txt_to_df(text: str):
 def transform_input_df(df):
     df = df[[col for col in KEEP_COLS if col != LABEL_COL and col in df.columns]]
 
-    # Fill missing columns
     for col in KEEP_COLS:
         if col == LABEL_COL:
             continue
         if col not in df.columns:
             df[col] = np.nan
 
-    # Impute missing values
     for col in df.columns:
         if df[col].isnull().sum() > 0:
             if col in mode_values:
@@ -59,7 +54,6 @@ def transform_input_df(df):
             else:
                 df[col] = df[col].fillna(0)
 
-    # One-hot encoding
     for col in CATEGORICAL_ONEHOT:
         dummies = pd.get_dummies(df[col], prefix=col)
         for dummy_col in onehot_columns_train:
@@ -68,12 +62,10 @@ def transform_input_df(df):
         dummies = dummies[onehot_columns_train]
         df = pd.concat([df.drop(columns=[col]), dummies], axis=1)
 
-    # Label encoding
     for col in CATEGORICAL_LABEL:
         le = label_encoders[col]
         df[col] = le.transform(df[col].astype(str))
 
-    # Standard scaling
     df[numeric_cols] = scaler.transform(df[numeric_cols])
 
     return df
@@ -90,16 +82,11 @@ async def predict_txt(file: UploadFile = File(...)):
             df = df.drop(columns=[LABEL_COL])
 
         transformed_df = transform_input_df(df)
+        prediction = model.predict(transformed_df)[0]
 
-        input_tensor = torch.tensor(transformed_df.values, dtype=torch.float32).to(device)
-        with torch.no_grad():
-            output = model(input_tensor)
-            prediction = torch.argmax(output, dim=1).item()
-
-        response = {
+        return JSONResponse({
             "predicted_class": int(prediction),
             "true_label": true_label
-        }
-        return JSONResponse(response)
+        })
     except Exception as e:
         return JSONResponse({"error": str(e)})
