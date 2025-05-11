@@ -34,7 +34,7 @@ services:
     user: root
     volumes:
       - /mnt/data:/mnt/data
-      - /mnt/object:/mnt/object
+      # - /mnt/object:/mnt/object
     working_dir: /mnt/data/LoanData
     command:
       - bash
@@ -163,7 +163,7 @@ services:
         CATEGORICAL_LABEL = ["sub_grade"]
 
         # Read raw training data
-        df = pd.read_csv("/mnt/object/train.csv", low_memory=False)
+        df = pd.read_csv("/mnt/data/LoanData/train.csv", low_memory=False)
         log_msgs = []
 
         # Check for column existence
