@@ -49,6 +49,7 @@ services:
       - |
         set -e
         pip install gdown
+        mkdir -p LoanData
         cd LoanData
         mkdir -p val
         cd val
