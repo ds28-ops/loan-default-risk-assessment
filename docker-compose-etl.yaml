@@ -47,6 +47,7 @@ services:
         pip install gdown
         cd LoanData
         mkdir -p val
+        cd val
 
         echo "Downloading training CSV..."
         gdown --fuzzy 'https://drive.google.com/file/d/12AYwEwxSPYA8c3Vlsmve1H4hQDmJF0QA' -O val.csv
