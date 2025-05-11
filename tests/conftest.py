@@ -1,7 +1,14 @@
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import pytest
 import pandas as pd
 import joblib
 from src.evaluate import transform, predict
+
+
+
 
 MODEL_PATH = "/mnt/block/minio_data/mlflow-artifacts/1/19ade86ae7634e788676cd21117edbfa/artifacts/model.pth"
 VAL_DATA_PATH = "/mnt/object/val/val_transformed.csv"

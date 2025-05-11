@@ -1,0 +1,25 @@
+services:
+  offline-eval:
+    container_name: pytest_offline_eval
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM python:3.11-slim
+
+        WORKDIR /app
+
+        # Install required packages
+        RUN pip install --no-cache-dir pandas scikit-learn joblib matplotlib pytest
+
+        # Copy everything into /app
+        COPY . .
+
+        # Set PYTHONPATH so src/ becomes importable
+        ENV PYTHONPATH=/app
+
+        # Run tests
+        CMD ["pytest", "--verbose", "--tb=no", "tests/"]
+    volumes:
+      - .:/app
+      - /mnt/object:/mnt/object
+      - /mnt/block:/mnt/block
