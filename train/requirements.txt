@@ -1,7 +1,9 @@
 mlflow
 xgboost
-scikit-learn
 pandas
 numpy
+scikit-learn
 joblib
-ray
+xgboost_ray
+ray[default]
+ray[train]
