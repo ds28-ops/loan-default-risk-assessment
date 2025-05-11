@@ -6,7 +6,7 @@ COPY fastapi_pt/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-COPY train/models/xgb-kfold-binary-13/model.pth .
+COPY ./train/models/xgb-kfold-binary-13/model.pth .
 COPY transform_artifacts.pkl .
 
 
