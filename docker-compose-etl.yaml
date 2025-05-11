@@ -53,7 +53,7 @@ services:
         cd val
 
         echo "Downloading training CSV..."
-        gdown --fuzzy 'https://drive.google.com/file/d/12AYwEwxSPYA8c3Vlsmve1H4hQDmJF0QA' -O val.csv
+        gdown 'https://drive.google.com/uc?id=12AYwEwxSPYA8c3Vlsmve1H4hQDmJF0QA' -O val.csv
 
         echo "Listing contents of /data after extract stage:"
         ls -l /mnt/data/LoanData
