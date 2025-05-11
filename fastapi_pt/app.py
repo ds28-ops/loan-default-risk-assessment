@@ -12,7 +12,7 @@ app = FastAPI()
 
 # === Load model + transformation artifacts ===
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = torch.load("model.pth", map_location=device)
+model = joblib.load("model.pth")
 model.eval()
 
 artifacts = joblib.load("transform_artifacts.pkl")
