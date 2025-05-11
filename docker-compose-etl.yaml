@@ -181,6 +181,8 @@ services:
 
         print("✅ Transformation complete. Artifacts saved.")
                 '
+                rm -f /mnt/data/LoanData/train/train.csv
+
                 echo "Listing contents of /data/LoanData/train after transform stage:"
                 ls -lh /mnt/data/LoanData/train
 
@@ -214,6 +216,7 @@ services:
         print("  - val_infer.csv (90% of val.csv)")
         print("  - val_templatetest.csv (10% of val.csv)")
         '
+        rm -f /mnt/data/LoanData/val/val.csv
 
 
 
@@ -297,6 +300,7 @@ services:
         df.to_csv("/mnt/data/LoanData/val/val_transformed.csv", index=False)
         print("✅ val_transformed.csv saved using training transformation logic.")
         '
+        rm -f /mnt/data/LoanData/val/val_infer.csv
 
 
 
