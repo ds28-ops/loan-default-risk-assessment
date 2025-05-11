@@ -11,7 +11,7 @@ def index():
         file = request.files["file"]
         if file:
             response = requests.post(
-                f"{FASTAPI_SERVER_URL}/read_txt",
+                f"{FASTAPI_SERVER_URL}/predict_loan_risk",
                 files={"file": (file.filename, file.stream, file.content_type)},
             )
             content = response.text
