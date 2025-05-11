@@ -138,6 +138,7 @@ services:
       - /mnt/block:/mnt/block
     networks:
       - eval_net
+      - persist_block_default
 
   grafana:
     image: grafana/grafana:latest
@@ -156,6 +157,7 @@ services:
       - /mnt/block:/mnt/block
     networks:
       - eval_net
+      - persist_block_default
 
 volumes:
   airflow_shared:
