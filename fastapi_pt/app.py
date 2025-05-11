@@ -6,9 +6,27 @@ import joblib
 import os
 
 from sklearn.preprocessing import LabelEncoder
+from prometheus_fastapi_instrumentator import Instrumentator
+from prometheus_client import Histogram, Counter
+
 
 app = FastAPI()
 
+confidence_histogram = Histogram(
+    "prediction_confidence",
+    "Model prediction confidence",
+    buckets=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+)
+
+class_counter = Counter(
+    "predicted_class_total",
+    "Count of predictions per class",
+    ['class_name']
+)
+classes = ["Low", "High"]
+
+
+Instrumentator().instrument(app).expose(app)
 # Load model and transform artifacts
 model = joblib.load("model.pth")
 artifacts = joblib.load("transform_artifacts.pkl")
@@ -93,6 +111,12 @@ async def predict_txt(file: UploadFile = File(...)):
         true_label = transformed_df[LABEL_COL].iloc[0] if LABEL_COL in transformed_df.columns else None
         transformed_df = transformed_df.drop(columns=[LABEL_COL])
         prediction = model.predict(transformed_df.values)[0]
+        confidence= model.predict_proba(transformed_df.values)[0][prediction]
+        class_name = "Low" if int(prediction) == 0 else "High"
+        confidence_histogram.observe(confidence)
+        class_counter.labels(class_name=class_name).inc()  # ✅ CORRECT
+
+        
 
         return JSONResponse({
             "predicted_class": int(prediction),
