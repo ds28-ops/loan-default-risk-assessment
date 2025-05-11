@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
 
   fastapi_server:
@@ -14,9 +16,6 @@ services:
     networks:
       - eval_net
       - persist_block_default
-    # depends_on:
-    #   - minio-create-prod-bucket
-
 
   flask:
     build:
@@ -32,7 +31,6 @@ services:
       - MINIO_PASSWORD=your-secret-key
     depends_on:
       - fastapi_server
-      - minio-create-prod-bucket
     volumes:
       - /mnt/object:/mnt/object
       - /mnt/block:/mnt/block
@@ -42,8 +40,6 @@ services:
 
   minio-create-prod-bucket:
     image: minio/mc
-    depends_on:
-      - fastapi_server
     entrypoint: >
       /bin/sh -c "
       mc alias set minio http://minio:9000 your-access-key your-secret-key &&
@@ -61,7 +57,7 @@ services:
     container_name: airflow-webserver
     entrypoint: /bin/bash
     command: >
-      -c "exec airflow webserver"
+      -c "airflow db upgrade && exec airflow webserver"
     ports:
       - "8081:8080"
     environment:
@@ -80,9 +76,6 @@ services:
       - airflow_shared:/opt/airflow
       - /mnt/object:/mnt/object
       - /mnt/block:/mnt/block
-    depends_on:
-      airflow-setup:
-        condition: service_completed_successfully
     networks:
       - eval_net
       - persist_block_default
@@ -96,7 +89,7 @@ services:
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__FERNET_KEY=wmSpjmCJ477jqpJE9BlzuzzI_Cw4P4RRGBZj1KeAPcU=
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://user:password@postgres/postgres
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://user:password@postgres/mlflowdb
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - MINIO_URL=http://minio:9000
       - MINIO_USER=your-access-key
@@ -107,40 +100,15 @@ services:
       - airflow_shared:/opt/airflow
       - /mnt/object:/mnt/object
       - /mnt/block:/mnt/block
-    depends_on:
-      airflow-setup:
-        condition: service_completed_successfully
     networks:
       - eval_net
       - persist_block_default
-
-  airflow-setup:
-    image: apache/airflow:2.9.3-python3.11
-    container_name: airflow-setup
-    entrypoint: /bin/bash
-    command: >
-      -c "airflow db migrate &&
-          airflow users create --username admin --firstname Airflow --lastname Admin --role Admin --email airflow@example.com --password airflow"
-    environment:
-      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__FERNET_KEY=wmSpjmCJ477jqpJE9BlzuzzI_Cw4P4RRGBZj1KeAPcU=
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://user:password@postgres/postgres
-    volumes:
-      - ../dags:/opt/airflow/dags
-      - ../scripts:/opt/airflow/dags/scripts
-      - airflow_shared:/opt/airflow
-      - /mnt/object:/mnt/object
-      - /mnt/block:/mnt/block
-    networks:
-      - eval_net
-      - persist_block_default
-    restart: "no"
 
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
     ports:
-      - "0.0.0.0:9090:9090"
+      - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - /mnt/object:/mnt/object
@@ -152,7 +120,7 @@ services:
     image: grafana/grafana:latest
     container_name: grafana
     ports:
-      - "0.0.0.0:3000:3000"
+      - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
