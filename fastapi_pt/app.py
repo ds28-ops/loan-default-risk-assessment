@@ -96,9 +96,9 @@ async def predict_txt(file: UploadFile = File(...)):
 
         return JSONResponse({
             "predicted_class": int(prediction),
-            "true_label": true_label,
-            "raw_extracted_features": raw_features,
-            "features_used": transformed_df.to_dict(orient="records")[0]
+            "true_label": int(true_label) if true_label is not None else None,
+            "raw_extracted_features": {k: (v.item() if hasattr(v, "item") else v) for k, v in raw_features.items()},
+            "features_used": {k: (v.item() if hasattr(v, "item") else v) for k, v in transformed_df.to_dict(orient="records")[0].items()}
         })
     except Exception as e:
         return JSONResponse({"error": str(e)})
