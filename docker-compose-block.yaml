@@ -88,7 +88,7 @@ services:
       - AWS_ENDPOINT_URL=http://minio:9000
     volumes:
       - ray_tmp:/tmp/ray
-      - /mnt/object:/mnt/object 
+      - /mnt/object:/mnt/object
     user: root
 
   ray-worker-1:
@@ -121,7 +121,6 @@ services:
       - /mnt/object:/mnt/object
       - /mnt/block:/mnt/block
 
-# ✅ This block must be at root level, NOT under `services`
 volumes:
   ray_tmp:
   minio_data:
