@@ -29,8 +29,8 @@ classes = ["Low", "High"]
 
 # Instrumentator().instrument(app).expose(app)
 # Load model and transform artifacts
-model = joblib.load("model.pth")
-artifacts = joblib.load("transform_artifacts.pkl")
+# model = joblib.load("model.pth")
+# artifacts = joblib.load("transform_artifacts.pkl")
 
 KEEP_COLS = artifacts["keep_cols"]
 CATEGORICAL_ONEHOT = artifacts["categorical_onehot"]
@@ -99,6 +99,9 @@ def transform_input_df(df):
 
 @app.post("/predict_loan_risk")
 async def predict_txt(file: UploadFile = File(...)):
+    model = joblib.load("model.pth")
+    artifacts = joblib.load("transform_artifacts.pkl")
+
     contents = await file.read()
     text = contents.decode("utf-8")
 
