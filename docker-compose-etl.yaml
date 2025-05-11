@@ -4,7 +4,7 @@ name: train-transform
 #   /mnt/data:
 
 services:
-  extract-data:
+  train-extract-data:
     container_name: etl_extract_data
     image: python:3.11
     user: root
@@ -23,12 +23,41 @@ services:
         cd LoanData
 
         echo "Downloading training CSV..."
-        gdown --fuzzy 'https://drive.google.com/file/d/12AYwEwxSPYA8c3Vlsmve1H4hQDmJF0QA' -O train.csv
+        gdown --fuzzy 'https://drive.google.com/file/d/1BLKJFsTj23G7YCT0BjAOgFFHZPYOeSFN' -O train.csv
 
         echo "Listing contents of /data after extract stage:"
         ls -l /mnt/data/LoanData
 
-  transform-data:
+
+
+
+  val-extract-data:
+    container_name: etl_extract_data
+    image: python:3.11
+    user: root
+    volumes:
+      - /mnt/data:/mnt/data
+    working_dir: /mnt/data
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+        pip install gdown
+        echo "Resetting dataset directory..."
+        rm -rf LoanData
+        mkdir -p LoanData
+        cd LoanData
+
+        echo "Downloading training CSV..."
+        gdown --fuzzy 'https://drive.google.com/file/d/12AYwEwxSPYA8c3Vlsmve1H4hQDmJF0QA' -O val.csv
+
+        echo "Listing contents of /data after extract stage:"
+        ls -l /mnt/data/LoanData
+
+    
+
+  train-transform-data:
     container_name: etl_transform_data
     image: python:3.11
     user: root
@@ -44,93 +73,6 @@ services:
         pip install pandas scikit-learn joblib tqdm
 
         python3 -c '
-        # import pandas as pd
-        # import numpy as np
-        # import os
-        # from sklearn.preprocessing import StandardScaler, LabelEncoder
-
-        # LABEL_COL = "risk_level"
-
-        # KEEP_COLS = [
-        #     "loan_amnt", "funded_amnt", "funded_amnt_inv", "int_rate", "installment",
-        #     "sub_grade", "home_ownership", "annual_inc", "verification_status", "dti",
-        #     "delinq_2yrs", "fico_range_low", "fico_range_high", "inq_last_6mths",
-        #     "open_acc", "pub_rec", "revol_bal", "revol_util", "total_acc",
-        #     "collections_12_mths_ex_med", "acc_now_delinq", "tot_coll_amt",
-        #     "tot_cur_bal", "open_act_il", "open_il_12m", "total_bal_il",
-        #     "open_rv_12m", "max_bal_bc", "all_util", "total_rev_hi_lim", "inq_fi",
-        #     "total_cu_tl", "inq_last_12m", "avg_cur_bal", "bc_open_to_buy", "bc_util",
-        #     "chargeoff_within_12_mths", "delinq_amnt", "mort_acc",
-        #     "mths_since_recent_inq", "num_actv_bc_tl", "num_actv_rev_tl",
-        #     "num_bc_sats", "num_bc_tl", "num_il_tl", "num_op_rev_tl",
-        #     "num_rev_accts", "num_rev_tl_bal_gt_0", "num_sats",
-        #     "num_tl_120dpd_2m", "num_tl_30dpd", "num_tl_90g_dpd_24m",
-        #     "num_tl_op_past_12m", "pct_tl_nvr_dlq", "percent_bc_gt_75",
-        #     "pub_rec_bankruptcies", "tax_liens", "tot_hi_cred_lim",
-        #     "total_bal_ex_mort", "total_bc_limit", "total_il_high_credit_limit",
-        #     LABEL_COL
-        # ]
-
-        # CATEGORICAL_ONEHOT = ["home_ownership", "verification_status"]
-        # CATEGORICAL_LABEL = ["sub_grade"]
-
-        # df = pd.read_csv("/mnt/data/LoanData/train.csv", low_memory=False)
-        # log_msgs = []
-        # print("########################################################################################\n\n")
-        # print(df.columns)
-        # print("########################################################################################\n\n")
-        # # Select only desired columns
-        # missing_cols = [col for col in KEEP_COLS if col not in df.columns]
-        # if missing_cols:
-        #     raise ValueError(f"Missing expected columns: {missing_cols}")
-        # df = df[KEEP_COLS]
-
-        # # Separate label
-        # label_series = df.pop(LABEL_COL)
-
-        # # Handle NaNs
-        # for col in df.columns:
-        #     if df[col].isnull().sum() > 0:
-        #         if df[col].dtype == object:
-        #             mode = df[col].mode()
-        #             df[col] = df[col].fillna(mode[0] if not mode.empty else "Unknown")
-        #             log_msgs.append(f"Filled NaNs in {col} with mode/Unknown")
-        #         else:
-        #             df[col] = df[col].fillna(df[col].median())
-        #             log_msgs.append(f"Filled NaNs in {col} with median")
-
-        # # One-hot encoding
-        # for col in CATEGORICAL_ONEHOT:
-        #     dummies = pd.get_dummies(df[col], prefix=col)
-        #     df = pd.concat([df.drop(columns=[col]), dummies], axis=1)
-        #     log_msgs.append(f"One-hot encoded: {col}")
-
-        # # Label encoding
-        # for col in CATEGORICAL_LABEL:
-        #     le = LabelEncoder()
-        #     df[col] = le.fit_transform(df[col].astype(str))
-        #     log_msgs.append(f"Label-encoded: {col}")
-
-        # # Scale numeric features
-        # numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-        # scaler = StandardScaler()
-        # df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
-        # log_msgs.append(f"Standard-scaled columns: {numeric_cols}")
-
-        # # Reattach label
-        # df[LABEL_COL] = label_series.reset_index(drop=True)
-        # log_msgs.append("Re-attached label column.")
-
-        # # Save
-        # df.to_csv("train_transformed.csv", index=False)
-        # with open("etl_log.txt", "w") as f:
-        #     for line in log_msgs:
-        #         f.write(line + "\\n")
-        # print("✅ Transformation complete.")
-
-
-
-
         import pandas as pd
         import numpy as np
         import os
@@ -217,7 +159,7 @@ services:
         df[LABEL_COL] = label_series.reset_index(drop=True)
         log_msgs.append("Re-attached binary-mapped label column.")
 
-        df.to_csv("train_transformed_1.csv", index=False)
+        df.to_csv("train_transformed.csv", index=False)
 
         artifacts = {
             "median_values": median_values,
@@ -232,16 +174,130 @@ services:
         }
         joblib.dump(artifacts, "transform_artifacts.pkl")
 
-        with open("etl_log_1.txt", "w") as f:
+        with open("etl_log.txt", "w") as f:
             for line in log_msgs:
                 f.write(line + "\n")
 
         print("✅ Transformation complete. Artifacts saved.")
-
                 '
-
                 echo "Listing contents of /data/LoanData after transform stage:"
-                ls -lh /data/LoanData
+                ls -lh /mnt/data/LoanData
+
+
+
+  val-templatetest-split:
+    container_name: val_templatetest_split
+    image: python:3.11
+    user: root
+    volumes:
+      - /mnt/data:/mnt/data
+    working_dir: /mnt/data/LoanData
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+        pip install pandas scikit-learn
+
+        python3 -c '
+        import pandas as pd
+        from sklearn.model_selection import train_test_split
+
+        df = pd.read_csv("val.csv", low_memory=False)
+        df_infer, df_template = train_test_split(df, test_size=0.1, random_state=42, stratify=df["risk_level"])
+
+        df_infer.to_csv("val_infer.csv", index=False)
+        df_template.to_csv("val_templatetest.csv", index=False)
+
+        print("✅ Saved:")
+        print("  - val_infer.csv (90% of val.csv)")
+        print("  - val_templatetest.csv (10% of val.csv)")
+        '
+
+
+
+
+  val-transform-data:
+    container_name: etl_val_transform
+    image: python:3.11
+    user: root
+    volumes:
+      - /mnt/data:/mnt/data
+    working_dir: /mnt/data/LoanData
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+        pip install pandas scikit-learn joblib tqdm
+
+        python3 -c '
+        import pandas as pd
+        import numpy as np
+        import joblib
+        from tqdm import tqdm
+        from sklearn.preprocessing import LabelEncoder
+
+        tqdm.pandas()
+
+        LABEL_COL = "risk_level"
+
+        # Load val data
+        df = pd.read_csv("val_infer.csv", low_memory=False)
+
+        # Load transform artifacts
+        artifacts = joblib.load("/mnt/data/LoanData/transform_artifacts.pkl")
+        KEEP_COLS = artifacts["keep_cols"]
+        median_values = artifacts["median_values"]
+        mode_values = artifacts["mode_values"]
+        label_encoders = artifacts["label_encoders"]
+        onehot_columns_train = artifacts["onehot_columns"]
+        scaler = artifacts["scaler"]
+        numeric_cols = artifacts["numeric_cols"]
+        CATEGORICAL_ONEHOT = artifacts["categorical_onehot"]
+        CATEGORICAL_LABEL = artifacts["categorical_label"]
+
+        log_msgs = []
+
+        df = df[KEEP_COLS]
+        label_series = df.pop(LABEL_COL).map(lambda x: 0 if x == "Low" else 1)
+
+        # Fill NaNs using training stats
+        for col in tqdm(df.columns, desc="Handling NaNs with training stats"):
+            if df[col].isnull().sum() > 0:
+                if col in mode_values:
+                    df[col] = df[col].fillna(mode_values[col])
+                elif col in median_values:
+                    df[col] = df[col].fillna(median_values[col])
+                else:
+                    df[col] = df[col].fillna(0)
+
+        # One-hot encoding
+        for col in CATEGORICAL_ONEHOT:
+            dummies = pd.get_dummies(df[col], prefix=col)
+            for dummy_col in onehot_columns_train:
+                if dummy_col not in dummies.columns:
+                    dummies[dummy_col] = 0
+            dummies = dummies[onehot_columns_train]
+            df = pd.concat([df.drop(columns=[col]), dummies], axis=1)
+
+        # Label encoding
+        for col in CATEGORICAL_LABEL:
+            le = label_encoders[col]
+            df[col] = le.transform(df[col].astype(str))
+
+        # Standard scaling
+        df[numeric_cols] = scaler.transform(df[numeric_cols])
+
+        # Reattach label
+        df[LABEL_COL] = label_series.reset_index(drop=True)
+
+        # Save transformed val set
+        df.to_csv("/mnt/data/val_transformed.csv", index=False)
+        print("✅ val_transformed.csv saved using training transformation logic.")
+        '
+
+
 
   load-data:
     container_name: etl_load_data
