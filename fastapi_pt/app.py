@@ -138,24 +138,36 @@ async def predict_txt(file: UploadFile = File(...)):
 
 @app.post("/feedback")
 async def save_feedback(request: Request):
-    data = await request.json()
-    is_correct = data["is_correct"]
-    record = data["record"]
-
-    if not is_correct:
-        record["risk_level"] = 1 - int(record["risk_level"])
-
-    filename = f"/mnt/object/production_data/{uuid.uuid4()}.json"
-    with open(filename, "w") as f:
-        json.dump(record, f)
-
-    dest_path = f"chi_uc:/production-artifacts/{os.path.basename(filename)}"
     try:
+        data = await request.json()
+        is_correct = data["is_correct"]
+        record = data["record"]
+
+        # Fallback to true_label if risk_level is missing
+        if "risk_level" not in record:
+            if "true_label" in record:
+                record["risk_level"] = int(record["true_label"])
+            else:
+                return JSONResponse(
+                    {"error": "Missing both 'risk_level' and 'true_label' in submitted record."},
+                    status_code=400
+                )
+
+        record["risk_level"] = int(record["risk_level"])
+        if not is_correct:
+            record["risk_level"] = 1 - record["risk_level"]
+
+        filename = f"/mnt/object/production_data/{uuid.uuid4()}.json"
+        with open(filename, "w") as f:
+            json.dump(record, f)
+
+        dest_path = f"chi_uc:/production-artifacts/{os.path.basename(filename)}"
         subprocess.run(["rclone", "copy", filename, dest_path], check=True)
+
         return {"status": "saved", "flipped": not is_correct}
-    except subprocess.CalledProcessError as e:
-        return JSONResponse({"error": f"Failed to copy via rclone: {str(e)}"}, status_code=500)
-    
+
+    except Exception as e:
+        return JSONResponse({"error": f"Feedback processing failed: {str(e)}"}, status_code=500)
 
     
 Instrumentator().instrument(app).expose(app)
