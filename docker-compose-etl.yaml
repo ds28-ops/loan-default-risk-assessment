@@ -4,8 +4,8 @@ name: train-transform
 #   /mnt/data:
 
 services:
-  train-extract-data:
-    container_name: etl_extract_data
+    eval-extract-data:
+    container_name: etl_eval_extract
     image: python:3.11
     user: root
     volumes:
@@ -17,47 +17,75 @@ services:
       - |
         set -e
         pip install gdown
-        echo "Resetting dataset directory..."
-        rm -rf LoanData
-        mkdir -p LoanData/train
-        cd LoanData/train
+        echo "Creating eval directory..."
+        rm -rf LoanData/eval
+        mkdir -p LoanData/eval
+        cd LoanData/eval
 
-        echo "Downloading training CSV..."
-        gdown --fuzzy 'https://drive.google.com/uc?id=1BLKJFsTj23G7YCT0BjAOgFFHZPYOeSFN' -O train.csv
-        file train.csv
-        head train.csv
+        echo "Downloading eval_text_files.zip..."
+        gdown --fuzzy 'https://drive.google.com/uc?id=1c9qMtjPOEr6bDxp6j0PpnCaVaJ3gw9o' -O eval_text_files.zip
 
-        echo "Listing contents of /data after extract stage:"
-        ls -l /mnt/data/LoanData
-        ls -l /mnt/data/LoanData/train
+        echo "Unzipping..."
+        unzip eval_text_files.zip
+        rm eval_text_files.zip
+
+        echo "Listing /mnt/data/LoanData/eval contents:"
+        ls -l /mnt/data/LoanData/eval
+
+  # train-extract-data:
+  #   container_name: etl_extract_data
+  #   image: python:3.11
+  #   user: root
+  #   volumes:
+  #     - /mnt/data:/mnt/data
+  #   working_dir: /mnt/data
+  #   command:
+  #     - bash
+  #     - -c
+  #     - |
+  #       set -e
+  #       pip install gdown
+  #       echo "Resetting dataset directory..."
+  #       rm -rf LoanData
+  #       mkdir -p LoanData/train
+  #       cd LoanData/train
+
+  #       echo "Downloading training CSV..."
+  #       gdown --fuzzy 'https://drive.google.com/uc?id=1BLKJFsTj23G7YCT0BjAOgFFHZPYOeSFN' -O train.csv
+  #       file train.csv
+  #       head train.csv
+
+  #       echo "Listing contents of /data after extract stage:"
+  #       ls -l /mnt/data/LoanData
+  #       ls -l /mnt/data/LoanData/train
 
 
 
 
-  val-extract-data:
-    container_name: etl_extract_data
-    image: python:3.11
-    user: root
-    volumes:
-      - /mnt/data:/mnt/data
-    working_dir: /mnt/data
-    command:
-      - bash
-      - -c
-      - |
-        set -e
-        pip install gdown
-        mkdir -p LoanData
-        cd LoanData
-        # mkdir -p val
-        cd val
+  # val-extract-data:
+  #   container_name: etl_extract_data
+  #   image: python:3.11
+  #   user: root
+  #   volumes:
+  #     - /mnt/data:/mnt/data
+  #   working_dir: /mnt/data
+  #   command:
+  #     - bash
+  #     - -c
+  #     - |
+  #       set -e
+  #       pip install gdown
+  #       mkdir -p LoanData
+  #       cd LoanData
+  #       # mkdir -p val
+  #       cd val
 
-        echo "Downloading training CSV..."
-        gdown 'https://drive.google.com/uc?id=12AYwEwxSPYA8c3Vlsmve1H4hQDmJF0QA' -O val.csv
+  #       echo "Downloading training CSV..."
+  #       gdown 'https://drive.google.com/uc?id=12AYwEwxSPYA8c3Vlsmve1H4hQDmJF0QA' -O val.csv
 
-        echo "Listing contents of /data after extract stage:"
-        ls -l /mnt/data/LoanData
-        ls -l /mnt/data/LoanData/val
+  #       echo "Listing contents of /data after extract stage:"
+  #       ls -l /mnt/data/LoanData
+  #       ls -l /mnt/data/LoanData/val
 
     
 
