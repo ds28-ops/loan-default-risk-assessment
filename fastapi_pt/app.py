@@ -4,10 +4,7 @@ import pandas as pd
 import numpy as np
 import joblib
 import os
-import uuid
-import json
-import subprocess
-from fastapi import Request
+
 
 from sklearn.preprocessing import LabelEncoder
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -129,33 +126,9 @@ async def predict_txt(file: UploadFile = File(...)):
             "predicted_class": int(prediction),
             "class_name": class_name,
             "confidence": float(confidence),
-            "true_label": int(true_label) if true_label is not None else None,
-            "features_used": transformed_df.to_dict(orient="records")[0]
+            "true_label": int(true_label) if true_label is not None else None
         })
     except Exception as e:
         return JSONResponse({"error": str(e)})
 
-
-@app.post("/feedback")
-async def save_feedback(request: Request):
-    data = await request.json()
-    is_correct = data["is_correct"]
-    record = data["record"]
-
-    if not is_correct:
-        record["risk_level"] = 1 - int(record["risk_level"])
-
-    filename = f"/mnt/object/production_data/{uuid.uuid4()}.json"
-    with open(filename, "w") as f:
-        json.dump(record, f)
-
-    dest_path = f"chi_uc:/production-artifacts/{os.path.basename(filename)}"
-    try:
-        subprocess.run(["rclone", "copy", filename, dest_path], check=True)
-        return {"status": "saved", "flipped": not is_correct}
-    except subprocess.CalledProcessError as e:
-        return JSONResponse({"error": f"Failed to copy via rclone: {str(e)}"}, status_code=500)
-    
-
-    
 Instrumentator().instrument(app).expose(app)
