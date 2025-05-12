@@ -4,33 +4,33 @@ name: train-transform
 #   /mnt/data:
 
 services:
-    eval-extract-data:
-      container_name: etl_eval_extract
-      image: python:3.11
-      user: root
-      volumes:
-        - /mnt/data:/mnt/data
-      working_dir: /mnt/data
-      command:
-        - bash
-        - -c
-        - |
-          set -e
-          pip install gdown
-          echo "Creating eval directory..."
-          rm -rf LoanData/eval
-          mkdir -p LoanData/eval
-          cd LoanData/eval
+  eval-extract-data:
+    container_name: etl_eval_extract
+    image: python:3.11
+    user: root
+    volumes:
+      - /mnt/data:/mnt/data
+    working_dir: /mnt/data
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+        pip install gdown
+        echo "Creating eval directory..."
+        rm -rf LoanData/eval
+        mkdir -p LoanData/eval
+        cd LoanData/eval
 
-          echo "Downloading eval_text_files.zip..."
-          gdown --fuzzy 'https://drive.google.com/uc?id=1c9qMtjPOEr6bDxp6j0PpnCaVaJ3gw9o' -O eval_text_files.zip
+        echo "Downloading eval_text_files.zip..."
+        gdown --fuzzy 'https://drive.google.com/uc?id=1c9qMtjPOEr6bDxp6j0PpnCaVaJ3gw9o' -O eval_text_files.zip
 
-          echo "Unzipping..."
-          unzip eval_text_files.zip
-          rm eval_text_files.zip
+        echo "Unzipping..."
+        unzip eval_text_files.zip
+        rm eval_text_files.zip
 
-          echo "Listing /mnt/data/LoanData/eval contents:"
-          ls -l /mnt/data/LoanData/eval
+        echo "Listing /mnt/data/LoanData/eval contents:"
+        ls -l /mnt/data/LoanData/eval
 
   train-extract-data:
     container_name: etl_extract_data
@@ -59,9 +59,6 @@ services:
         ls -l /mnt/data/LoanData
         ls -l /mnt/data/LoanData/train
 
-
-
-
   # val-extract-data:
   #   container_name: etl_extract_data
   #   image: python:3.11
@@ -86,8 +83,6 @@ services:
   #       echo "Listing contents of /data after extract stage:"
   #       ls -l /mnt/data/LoanData
   #       ls -l /mnt/data/LoanData/val
-
-    
 
   train-transform-data:
     container_name: etl_transform_data
@@ -217,8 +212,6 @@ services:
                 echo "Listing contents of /data/LoanData/train after transform stage:"
                 ls -lh /mnt/data/LoanData/train
 
-
-
   val-templatetest-split:
     container_name: val_templatetest_split
     image: python:3.11
@@ -248,9 +241,6 @@ services:
         print("  - val_templatetest.csv (10% of val.csv)")
         '
         rm -f /mnt/data/LoanData/val/val.csv
-
-
-
 
   val-transform-data:
     container_name: etl_val_transform
@@ -310,15 +300,15 @@ services:
         # One-hot encoding
         for col in CATEGORICAL_ONEHOT:
             dummies = pd.get_dummies(df[col], prefix=col)
-        
+
             # Filter relevant onehot columns for current variable
             relevant_cols = [c for c in onehot_columns_train if c.startswith(f"{col}_")]
-        
+
                 # Add missing dummy columns
             for dummy_col in relevant_cols:
                 if dummy_col not in dummies.columns:
                     dummies[dummy_col] = 0
-    
+
             dummies = dummies[relevant_cols]
             df = pd.concat([df.drop(columns=[col]), dummies], axis=1)
 
@@ -339,8 +329,6 @@ services:
         print("✅ val_transformed.csv saved using training transformation logic.")
         '
         rm -f /mnt/data/LoanData/val/val_infer.csv
-
-
 
   load-data:
     container_name: etl_load_data
