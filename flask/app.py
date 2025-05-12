@@ -34,7 +34,6 @@ TEMPLATE = """
             {% if prediction.features_used %}
             <textarea name="feedback_record" style="display:none;">{{ prediction.features_used | tojson }}</textarea>
             {% endif %}
-
             <button name="is_correct" value="true">✅ Prediction is Correct</button>
             <button name="is_correct" value="false">❌ Prediction is Wrong</button>
         </form>
@@ -51,6 +50,7 @@ TEMPLATE = """
 def index():
     prediction = None
     error = None
+
     if request.method == "POST":
         if "file" in request.files:
             file = request.files["file"]
@@ -59,31 +59,45 @@ def index():
                     f"{FASTAPI_SERVER_URL}/predict_loan_risk",
                     files={"file": (file.filename, file.read(), file.content_type)}
                 )
-                data = response.json()
-                if "error" in data:
-                    error = data["error"]
+
+                if response.status_code != 200:
+                    error = f"FastAPI error {response.status_code}: {response.text}"
                 else:
-                    prediction = data
+                    try:
+                        data = response.json()
+                        if "error" in data:
+                            error = data["error"]
+                        else:
+                            prediction = data
+                    except Exception as e:
+                        error = f"Failed to parse FastAPI response: {str(e)}\nRaw response: {response.text}"
+
             except Exception as e:
                 error = str(e)
+
         elif "feedback_record" in request.form:
             is_correct = request.form["is_correct"] == "true"
             raw_record = request.form.get("feedback_record", "")
-            if not raw_record.strip():
-                    error = "Missing or empty feedback record."
-            else:
-                    record = json.loads(raw_record)
 
             try:
+                if not raw_record.strip():
+                    raise ValueError("Missing or empty feedback record.")
+                record = json.loads(raw_record)
+
                 response = requests.post(
                     f"{FASTAPI_SERVER_URL}/feedback",
                     json={"is_correct": is_correct, "record": record}
                 )
-                data = response.json()
-                if "error" in data:
-                    error = data["error"]
+
+                if response.status_code != 200:
+                    error = f"FastAPI feedback error {response.status_code}: {response.text}"
                 else:
-                    prediction = {"status": data["status"], "flipped": data.get("flipped", False)}
+                    data = response.json()
+                    if "error" in data:
+                        error = data["error"]
+                    else:
+                        prediction = {"status": data["status"], "flipped": data.get("flipped", False)}
+
             except Exception as e:
                 error = str(e)
 
@@ -91,4 +105,3 @@ def index():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
-
