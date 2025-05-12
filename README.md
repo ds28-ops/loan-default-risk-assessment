@@ -104,7 +104,7 @@ curl -X POST http://<ip>:8000/predict \
      -H "Content-Type: application/json" \
      -d '{"annual_inc": 50000, "int_rate": 13.5, ...}'
 
-
+```
 ---
 
 ## 8 · Evaluation & Testing
