@@ -23,7 +23,7 @@ services:
         cd LoanData/eval
 
         echo "Downloading eval_text_files.zip..."
-        gdown 'https://drive.google.com/uc?id=1c9qMtjPOEr6bDxp6j0PpnCaVaJ3gw9o' -O eval_text_files.zip
+        gdown --fuzzy 'https://drive.google.com/uc?id=1c9qMtjPOEr6bDxp6lj0PpnCaVaJ3gw9o' -O eval_text_files.zip
 
         echo "Unzipping..."
         unzip eval_text_files.zip
