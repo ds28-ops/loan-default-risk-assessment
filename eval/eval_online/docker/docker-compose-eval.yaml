@@ -163,6 +163,8 @@ services:
       - "8888:8888"
     volumes:
       - /mnt/object:/mnt/object
+      - ~/loanradar:/home/jovyan/work
+
     networks:
       - eval_net
 

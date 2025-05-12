@@ -20,6 +20,7 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - /mnt/block/minio_data:/data
+      
 
   minio-create-bucket:
     image: minio/mc
