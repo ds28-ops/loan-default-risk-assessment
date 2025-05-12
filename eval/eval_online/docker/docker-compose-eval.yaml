@@ -8,6 +8,8 @@ services:
       - "8000:8000"
     volumes:
       #- ./model.pth:/app/model.pth
+      - ./rclone.log:/root/.config/rclone/rclone.log
+      - ./rclone.conf:/root/.config/rclone/rclone.conf
       - /mnt/object:/mnt/object
       - /mnt/block:/mnt/block
     networks:
