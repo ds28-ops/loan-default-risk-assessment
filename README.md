@@ -80,7 +80,6 @@ Built for NYU’s *ECE‑GY 9183 – Machine Learning Systems*, the project demo
 | Layer | Tooling | Notes |
 |-------|---------|-------|
 | IaC | Terraform (HCL) | Creates `m1.medium` KVM VMs, attaches object/block storage and floating IP |
-| Config Mgmt | Ansible | Installs Docker & Docker Compose |
 | Containers | Docker Compose | Services: ETL, MLflow, Ray-head, Ray-worker, FastAPI, Prometheus, Grafana |
 
 ---
