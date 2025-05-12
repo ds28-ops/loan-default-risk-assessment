@@ -31,7 +31,7 @@ TEMPLATE = """
         <p><strong>Confidence:</strong> {{ (prediction.confidence * 100) | round(2) }}%</p>
         <p><strong>True Label (if provided):</strong> {{ prediction.true_label }}</p>
         <form method="post">
-            <input type="hidden" name="feedback_record" value="{{ prediction.features_used | tojson }}">
+            <input type="hidden" name="feedback_record" value="{{ prediction.features_used | tojson | safe }}">
             <button name="is_correct" value="true">✅ Prediction is Correct</button>
             <button name="is_correct" value="false">❌ Prediction is Wrong</button>
         </form>
