@@ -113,7 +113,6 @@ Template based tests and slice of interest tests can be found in /test directory
 | Suite                        | Tool                     | Status                                                                                                                                |
 | ---------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
 | **Offline unit/slice tests** | `pytest`                 | ![6 passed](https://img.shields.io/badge/tests-6%20passed-brightgreen) ![2 failed](https://img.shields.io/badge/tests-2%20failed-red) |
-| **Load test (staging)**      |   |                                                                                                                   |
 | **Online monitoring** | Prometheus + Grafana	 | Real-time performance tracking via FastAPI metrics |
 
 <details><summary>Latest pytest summary</summary>
