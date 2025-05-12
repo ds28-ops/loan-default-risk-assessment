@@ -31,7 +31,10 @@ TEMPLATE = """
         <p><strong>Confidence:</strong> {{ (prediction.confidence * 100) | round(2) }}%</p>
         <p><strong>True Label (if provided):</strong> {{ prediction.true_label }}</p>
         <form method="post">
+            {% if prediction.features_used %}
             <textarea name="feedback_record" style="display:none;">{{ prediction.features_used | tojson }}</textarea>
+            {% endif %}
+
             <button name="is_correct" value="true">✅ Prediction is Correct</button>
             <button name="is_correct" value="false">❌ Prediction is Wrong</button>
         </form>
@@ -65,7 +68,12 @@ def index():
                 error = str(e)
         elif "feedback_record" in request.form:
             is_correct = request.form["is_correct"] == "true"
-            record = json.loads(request.form["feedback_record"])
+            raw_record = request.form.get("feedback_record", "")
+            if not raw_record.strip():
+                    error = "Missing or empty feedback record."
+            else:
+                    record = json.loads(raw_record)
+
             try:
                 response = requests.post(
                     f"{FASTAPI_SERVER_URL}/feedback",
