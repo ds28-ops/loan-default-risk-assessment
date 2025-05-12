@@ -35,9 +35,8 @@ Built for NYU’s *ECE‑GY 9183 – Machine Learning Systems*, the project demo
 
 ## 3 · System Architecture
 
-> **Mermaid rendering failed in GitHub.**  
-> Solid arrows = data/model artefacts  
-> Dashed = monitoring hooks  
+<img src="images/final_sys_diagram.png" alt="Alt text" width="500"/>
+  
 
 ---
 
