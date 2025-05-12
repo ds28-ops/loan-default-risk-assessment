@@ -45,13 +45,13 @@ Built for NYU’s *ECE‑GY 9183 – Machine Learning Systems*, the project demo
 
 - **Extract/Load** – `docker-compose-etl.yaml` spins up a Python 3.11 container to:
   - Download raw CSV from Google Drive via `gdown`
-  - Unzip and stage to `/mnt/data/raw` (S3-compatible object store)
+  - Unzip and stage to `/mnt/data/LoanData` (S3-compatible object store)
 
 - **Transform** – Chunk-based processing:
   - Imputes missing values
   - One-hot & label-encodes categoricals
   - Scales numerics
-  - Outputs partitioned Parquet files to `/mnt/data/LoanData`
+  - Outputs partitioned files to `/mnt/data/LoanData`
 
 - **Storage** – Persistent block and object volumes provisioned with Terraform and mounted on the VM
 
