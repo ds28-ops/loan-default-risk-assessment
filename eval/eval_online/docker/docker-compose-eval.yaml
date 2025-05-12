@@ -1,5 +1,4 @@
 services:
-
   fastapi_server:
     build:
       context: ../../..
@@ -156,6 +155,16 @@ services:
     networks:
       - eval_net
       - persist_block_default
+
+  jupyter:
+    image: jupyter/base-notebook:python-3.11
+    container_name: jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - /mnt/object:/mnt/object
+    networks:
+      - eval_net
 
 volumes:
   airflow_shared:
