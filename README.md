@@ -1,125 +1,110 @@
-# Loan‑Radar
-
-*Predicting Micro‑Finance Loan Default Risk on Chameleon Cloud*
-
----
-
-## Overview
-
-**Loan‑Radar** is an end‑to‑end, cloud‑native machine‑learning system that predicts the probability that a borrower will default on a consumer loan.  Built for NYU’s *ECE‑GY 9183 – Machine‑Learning Systems*, the project demonstrates:
-
-* **Medium‑scale data** – 1.9 M rows (≈ 2 GB) from the public LendingClub loan book.
-* **Distributed training** – Ray Tune hyper‑parameter search logged to a self‑hosted MLflow server.
-* **Fully containerised deployment** on the Chameleon Cloud KVM platform.
-* **Monitored inference service** – FastAPI + Prometheus + Grafana with < 1 ms median latency.
+# Loan‑Radar  
+**Predicting Micro‑Finance Loan Default Risk on Chameleon Cloud**
 
 ---
 
-## 1 · Value Proposition
+## 🧠 Overview  
+**Loan‑Radar** is a cloud-native machine learning system that predicts loan approval confidence by assessing borrower default probability.  
+Built for NYU’s *ECE‑GY 9183 – Machine Learning Systems*, the project demonstrates:
 
-| Stakeholder                                                    | Pain Point                                                               | ML Solution                                                                                                          | Business KPI                                                                          |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Credit‑risk officers at regional banks & micro‑finance lenders | Manual rule‑based underwriting is slow, subjective, and often inaccurate | **Real‑time REST API** returning **Low / Medium / High** default‑risk labels + feature‑level explanation in < 120 ms | • ↓ Default‑rate on new loans<br>• ↑ Application throughput<br>• ↓ Manual‑review cost |
-
----
-
-## 2 · Dataset & External Assets
-
-| Asset                               | Lineage / Licence                                   | Notes                                                                             |
-| ----------------------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------- |
-| **LendingClub 2007‑2018 loan book** | Public dataset mirrored on Kaggle – CC BY‑NC‑SA 4.0 | 2 GB of accepted‑loan records; target `loan_status` mapped to 3‑class risk level. |
-| **scikit‑learn / XGBoost**          | BSD‑3 & Apache‑2.0                                  | XGBoost selected for tabular interpretability & speed.                            |
-
-No proprietary data or closed models are used.
+- **Medium-scale data** – 1.9M rows (~2GB) from the public LendingClub loan book  
+- **Distributed training** – Ray Tune hyper-parameter search, tracked via self-hosted MLflow  
+- **Cloud deployment** – Fully containerized on Chameleon Cloud’s KVM platform  
+- **Monitored inference service** – FastAPI + Prometheus + Grafana with < 1 ms median latency  
 
 ---
 
-## 3 · System Architecture
+## 1 · Value Proposition
 
-```mermaid
-graph LR
-    subgraph Training
-        A[Ingest CSVs] --> B[ETL Docker job\n(clean & feature engineering)]
-        B --> C[Ray Tune HPO\n(XGBoost, 32 trials)]
-        C --> D[MLflow Tracking]
-        C --> E[Pick best model\n(F1 & AUC)]
-        E --> F[Model Registry (MLflow)]
-    end
-    subgraph CI/CD Pipeline
-        P[GitHub Action Trigger] --> Q[Ray Job Submit\n(re‑training)]
-        Q --> D
-        Q -->|buildx| R[Container Image\n(model‑server)]
-        R --> S[Helm Upgrade --install\n(staging)]
-    end
-    subgraph Serving
-        U[FastAPI + Uvicorn] -.-> V[Prometheus Metrics]
-        U --> W[Grafana Dashboards]
-        U --> X[Client (React form)]
-    end
-```
-
-*Solid arrows = data / model artefacts · Dashed = monitoring hooks*
+| Stakeholder | Pain Point | ML Solution |
+|-------------|------------|-------------|
+| Credit-risk officers at regional banks & micro-finance lenders | Manual rule-based underwriting is slow, subjective, and often inaccurate | Real-time REST API returning Low / High default-risk labels + feature-level explanation in < 120 ms |
 
 ---
 
-## 4 · Data Pipeline
+## 2 · Dataset & External Assets
 
-1. **Extract / Load** – `docker-compose-etl.yaml` spins up a Python 3.11 container that downloads the raw CSV from Google Drive (via `gdown`), unzips, and stages to `/mnt/data/raw` (S3‑compatible object store).
-2. **Transform** – `transform.py` processes the dataset in chunks, imputes missing values, one‑hot & label‑encodes categoricals, scales numerics, and writes partitioned Parquet files to `/mnt/data/processed`.
-3. **Split** – `data‑split.py` performs a stratified 70 / 15 / 15 train‑val‑eval split and saves the CSVs to object storage.
-4. **Streaming simulator** – `simulator.py` publishes JSON applicant events to Kafka topic **loan‑raw**; a consumer batches them for online evaluation.
+| Asset | Lineage / License | Notes |
+|-------|-------------------|-------|
+| LendingClub 2007‑2018 loan book | Public dataset mirrored on Kaggle – CC BY‑NC‑SA 4.0 | 2 GB of accepted‑loan records; target `loan_status` mapped to 3-class risk level |
+| scikit-learn / XGBoost | BSD‑3 & Apache‑2.0 | XGBoost selected for tabular interpretability & speed |
 
-Persistent block and object storage volumes are provisioned via Terraform and mounted on the VM.
-
----
-
-## 5 · Model Training
-
-| Item           | Setting                                                                    |
-| -------------- | -------------------------------------------------------------------------- |
-| **Algorithm**  | XGBoost (`binary:logistic`)                                                |
-| **Key params** | `max_depth = 15`, `n_estimators = 150`, `scale_pos_weight = 6.4`           |
-| **HPO**        | Ray Tune (ASHA) exploring depth, learning rate, subsampling over 32 trials |
-| **Tracking**   | All runs logged to self‑hosted MLflow (Docker Compose)                     |
-
-**Best model metrics**
-
-| Metric             | Validation | Test |
-| ------------------ | ---------- | ---- |
-| F1 (macro)         | **0.78**   | 0.76 |
-| ROC‑AUC            | **0.82**   | 0.81 |
-| PR‑AUC (High‑risk) | **0.74**   | 0.72 |
+⚠️ No proprietary data or closed models are used.
 
 ---
 
-## 6 · Deployment & DevOps
+## 3 · System Architecture
 
-| Layer           | Tooling                    | Notes                                                                                      |
-| --------------- | -------------------------- | ------------------------------------------------------------------------------------------ |
-| **IaC**         | Terraform (HCL)            | Creates `m1.medium` KVM VM, attaches 100 GB block volume & floating IP.                    |
-| **Config Mgmt** | Ansible                    | Installs Docker & Docker Compose.                                                          |
-| **Containers**  | Docker Compose             | Services: ETL, MLflow, Ray‑head, Ray‑worker, FastAPI, Prometheus, Grafana.                 |
-| **CI**          | GitHub Actions *(planned)* | Runs unit tests & builds images on push to `main`.                                         |
-| **CD**          | Helm *(manual promotion)*  | `helm upgrade --install loan‑radar ./helm` deploys to `staging` → `canary` → `production`. |
+> **Mermaid rendering failed in GitHub.**  
+> Solid arrows = data/model artefacts  
+> Dashed = monitoring hooks  
 
 ---
 
-## 7 · Serving & Monitoring
+## 4 · Data Pipeline
 
-* **Inference API** – FastAPI under Gunicorn/Uvicorn (`/predict` POST) handling JSON or CSV batch payloads.
-* **Performance**
+- **Extract/Load** – `docker-compose-etl.yaml` spins up a Python 3.11 container to:
+  - Download raw CSV from Google Drive via `gdown`
+  - Unzip and stage to `/mnt/data/raw` (S3-compatible object store)
 
-  * **Median latency**: **0.79 ms**
-  * **95th‑percentile latency**: **0.87 ms**
-  * **Throughput**: **33,083 samples / sec**
-    *(measured on 100‑sample micro‑benchmark)*
-* **Observability** – Prometheus counters/histograms for prediction confidence & class frequency; Grafana dashboard visualises latency, error rate, and traffic.
+- **Transform** – Chunk-based processing:
+  - Imputes missing values
+  - One-hot & label-encodes categoricals
+  - Scales numerics
+  - Outputs partitioned Parquet files to `/mnt/data/LoanData`
+
+- **Storage** – Persistent block and object volumes provisioned with Terraform and mounted on the VM
+
+---
+
+## 5 · Model Training
+
+| Item | Setting |
+|------|---------|
+| Algorithm | XGBoost (`binary:logistic`) |
+| Key Params | `max_depth = 15`, `n_estimators = 150`, `scale_pos_weight = 6.4` |
+| HPO | Ray Tune (ASHA), exploring `depth`, `learning_rate`, `subsample` over 32 trials |
+| Tracking | All runs logged to self-hosted MLflow (via Docker Compose) |
+
+### 📈 Best Model Metrics
+
+| Metric | Validation | Test |
+|--------|------------|------|
+| F1 (macro) | 0.78 | 0.76 |
+| ROC-AUC | 0.82 | 0.81 |
+| PR-AUC (High-risk) | 0.74 | 0.72 |
+
+---
+
+## 6 · Deployment & DevOps
+
+| Layer | Tooling | Notes |
+|-------|---------|-------|
+| IaC | Terraform (HCL) | Creates `m1.medium` KVM VMs, attaches object/block storage and floating IP |
+| Config Mgmt | Ansible | Installs Docker & Docker Compose |
+| Containers | Docker Compose | Services: ETL, MLflow, Ray-head, Ray-worker, FastAPI, Prometheus, Grafana |
+
+---
+
+## 7 · Serving & Monitoring
+
+- **Inference API** – FastAPI under Gunicorn/Uvicorn  
+  - `POST /predict` accepts JSON payloads  
+  - Median latency: **0.79 ms**  
+  - 95th-percentile latency: **0.87 ms**  
+  - Throughput: **33,083 samples/sec** (100-sample micro-benchmark)
+
+- **Observability**  
+  - Prometheus counters/histograms for:
+    - Prediction confidence
+    - Class frequency  
+  - Grafana dashboard for latency, throughput, traffic
 
 ```bash
-curl -X POST https://<ip>/predict \
+curl -X POST http://<ip>:8000/predict \
      -H "Content-Type: application/json" \
      -d '{"annual_inc": 50000, "int_rate": 13.5, ...}'
-```
+
 
 ---
 
@@ -128,8 +113,8 @@ curl -X POST https://<ip>/predict \
 | Suite                        | Tool                     | Status                                                                                                                                |
 | ---------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
 | **Offline unit/slice tests** | `pytest`                 | ![6 passed](https://img.shields.io/badge/tests-6%20passed-brightgreen) ![2 failed](https://img.shields.io/badge/tests-2%20failed-red) |
-| **Load test (staging)**      | Locust 50 users × 3 min  | p95 latency = 115 ms                                                                                                                  |
-| **Online canary**            | Synthetic re‑play driver | Acceptance‑rate delta < ±2 %                                                                                                          |
+| **Load test (staging)**      |   |                                                                                                                   |
+| **Online monitoring** | Prometheus + Grafana	 | Real-time performance tracking via FastAPI metrics |
 
 <details><summary>Latest pytest summary</summary>
 
