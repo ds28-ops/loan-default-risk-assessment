@@ -23,7 +23,7 @@ services:
         cd LoanData/eval
 
         echo "Downloading eval_text_files.zip..."
-        gdown --fuzzy 'https://drive.google.com/uc?id=1c9qMtjPOEr6bDxp6j0PpnCaVaJ3gw9o' -O eval_text_files.zip
+        gdown 'https://drive.google.com/uc?id=1c9qMtjPOEr6bDxp6j0PpnCaVaJ3gw9o' -O eval_text_files.zip
 
         echo "Unzipping..."
         unzip eval_text_files.zip
@@ -59,30 +59,30 @@ services:
         ls -l /mnt/data/LoanData
         ls -l /mnt/data/LoanData/train
 
-  # val-extract-data:
-  #   container_name: etl_extract_data
-  #   image: python:3.11
-  #   user: root
-  #   volumes:
-  #     - /mnt/data:/mnt/data
-  #   working_dir: /mnt/data
-  #   command:
-  #     - bash
-  #     - -c
-  #     - |
-  #       set -e
-  #       pip install gdown
-  #       mkdir -p LoanData
-  #       cd LoanData
-  #       # mkdir -p val
-  #       cd val
+  val-extract-data:
+    container_name: etl_extract_data
+    image: python:3.11
+    user: root
+    volumes:
+      - /mnt/data:/mnt/data
+    working_dir: /mnt/data
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+        pip install gdown
+        mkdir -p LoanData
+        cd LoanData
+        # mkdir -p val
+        cd val
 
-  #       echo "Downloading training CSV..."
-  #       gdown 'https://drive.google.com/uc?id=12AYwEwxSPYA8c3Vlsmve1H4hQDmJF0QA' -O val.csv
+        echo "Downloading training CSV..."
+        gdown 'https://drive.google.com/uc?id=12AYwEwxSPYA8c3Vlsmve1H4hQDmJF0QA' -O val.csv
 
-  #       echo "Listing contents of /data after extract stage:"
-  #       ls -l /mnt/data/LoanData
-  #       ls -l /mnt/data/LoanData/val
+        echo "Listing contents of /data after extract stage:"
+        ls -l /mnt/data/LoanData
+        ls -l /mnt/data/LoanData/val
 
   train-transform-data:
     container_name: etl_transform_data
