@@ -138,7 +138,7 @@ FAILED tests/test_calibration.py::test_random_noise        F1 unexpectedly high 
 # 1. Clone repo & build images
 $ git clone https://github.com/ds28-ops/loan-default-risk-assessment.git \
   && cd loan-default-risk-assessment
-$ docker compose -f docker-compose-fastapi.yaml up --build
+$ docker compose -f eval/eval_online/docker/docker-compose-eval.yaml up --build -d
 
 # 2. Open docs & dashboards
 → Swagger:  http://localhost:8000/docs
