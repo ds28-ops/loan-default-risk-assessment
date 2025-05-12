@@ -109,6 +109,7 @@ curl -X POST http://<ip>:8000/predict \
 ---
 
 ## 8 · Evaluation & Testing
+Template based tests and slice of interest tests can be found in /test directory
 
 | Suite                        | Tool                     | Status                                                                                                                                |
 | ---------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
