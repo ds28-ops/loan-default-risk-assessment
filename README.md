@@ -35,9 +35,8 @@ Built for NYU’s *ECE‑GY 9183 – Machine Learning Systems*, the project demo
 
 ## 3 · System Architecture
 
-> **Mermaid rendering failed in GitHub.**  
-> Solid arrows = data/model artefacts  
-> Dashed = monitoring hooks  
+<img src="images/final_sys_diagram.png" alt="Alt text" width="500"/>
+  
 
 ---
 
@@ -81,7 +80,6 @@ Built for NYU’s *ECE‑GY 9183 – Machine Learning Systems*, the project demo
 | Layer | Tooling | Notes |
 |-------|---------|-------|
 | IaC | Terraform (HCL) | Creates `m1.medium` KVM VMs, attaches object/block storage and floating IP |
-| Config Mgmt | Ansible | Installs Docker & Docker Compose |
 | Containers | Docker Compose | Services: ETL, MLflow, Ray-head, Ray-worker, FastAPI, Prometheus, Grafana |
 
 ---
@@ -105,7 +103,7 @@ curl -X POST http://<ip>:8000/predict \
      -H "Content-Type: application/json" \
      -d '{"annual_inc": 50000, "int_rate": 13.5, ...}'
 
-
+```
 ---
 
 ## 8 · Evaluation & Testing
@@ -114,7 +112,6 @@ Template based tests and slice of interest tests can be found in /test directory
 | Suite                        | Tool                     | Status                                                                                                                                |
 | ---------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
 | **Offline unit/slice tests** | `pytest`                 | ![6 passed](https://img.shields.io/badge/tests-6%20passed-brightgreen) ![2 failed](https://img.shields.io/badge/tests-2%20failed-red) |
-| **Load test (staging)**      |   |                                                                                                                   |
 | **Online monitoring** | Prometheus + Grafana	 | Real-time performance tracking via FastAPI metrics |
 
 <details><summary>Latest pytest summary</summary>
